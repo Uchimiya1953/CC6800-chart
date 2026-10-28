@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TEREX DEMAG CC6800 荷重表ナビゲーター</title>
+  <title>TEREX DEMAG CC6800 荷重表スマートナビゲーター</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -24,7 +24,6 @@
       max-width: 100%;
       height: auto !important;
     }
-    /* カスタムスクロールバー */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
@@ -38,21 +37,19 @@
     <div class="flex items-center gap-3">
       <div class="bg-amber-500 text-slate-950 font-tech font-bold px-2 py-0.5 rounded text-sm tracking-wider">CC6800</div>
       <div>
-        <h1 class="text-sm md:text-base font-bold text-white leading-tight">定格総荷重表ナビゲーター</h1>
-        <p class="text-[10px] text-slate-400">TEREX DEMAG GmbH • 目次・しおり完全連動システム</p>
+        <h1 class="text-sm md:text-base font-bold text-white leading-tight">定格総荷重表スマートナビゲーター</h1>
+        <p class="text-[10px] text-slate-400">TEREX DEMAG GmbH • 条件選択ダイレクトジャンプ</p>
       </div>
     </div>
 
-    <!-- ページ操作 & ツールバー -->
+    <!-- ページ送り & 操作ツール -->
     <div class="flex items-center gap-2">
-      <!-- PDF再選択ボタン -->
       <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1 rounded text-xs flex items-center gap-1 font-medium cursor-pointer transition-colors" title="別のPDFを開く">
         <i data-lucide="folder-open" class="w-3.5 h-3.5 text-amber-400"></i>
         <span class="hidden sm:inline">PDF変更</span>
         <input type="file" id="filePicker" accept=".pdf" class="hidden">
       </label>
 
-      <!-- ページ送り -->
       <div class="flex items-center bg-slate-800 rounded border border-slate-700 px-2 py-1">
         <button id="prevPageBtn" class="text-slate-300 hover:text-amber-400 p-1"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
         <input type="number" id="pageInput" min="1" max="4823" value="1" class="w-14 bg-slate-900 text-center font-tech text-amber-400 text-sm font-bold border border-slate-700 rounded mx-1 py-0.5 focus:outline-none focus:border-amber-500">
@@ -60,16 +57,14 @@
         <button id="nextPageBtn" class="text-slate-300 hover:text-amber-400 p-1"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
       </div>
 
-      <!-- ズーム -->
       <div class="hidden sm:flex items-center bg-slate-800 rounded border border-slate-700 px-1.5 py-1">
         <button id="zoomOutBtn" class="p-1 text-slate-300 hover:text-amber-400" title="縮小"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
         <span id="zoomLevel" class="text-xs font-tech text-slate-300 px-1.5">100%</span>
         <button id="zoomInBtn" class="p-1 text-slate-300 hover:text-amber-400" title="拡大"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
       </div>
 
-      <!-- サイドバー開閉（スマホ用） -->
       <button id="toggleSidebarBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 p-1.5 rounded font-bold flex items-center gap-1 text-xs md:hidden">
-        <i data-lucide="list" class="w-4 h-4"></i>
+        <i data-lucide="sliders" class="w-4 h-4"></i>
       </button>
     </div>
   </header>
@@ -77,49 +72,95 @@
   <!-- メインエリア -->
   <div class="flex flex-1 overflow-hidden relative">
     
-    <!-- 左側サイドバー（PDFしおり目次ツリー） -->
-    <aside id="sidebar" class="absolute md:static top-0 left-0 bottom-0 z-30 w-80 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 -translate-x-full md:translate-x-0">
-      <!-- 目次ヘッダー & 検索窓 -->
-      <div class="p-3 border-b border-slate-800 bg-slate-900/90 backdrop-blur">
-        <div class="flex items-center justify-between mb-2">
+    <!-- 左側サイドバー（条件選択 ＆ しおりパネル） -->
+    <aside id="sidebar" class="absolute md:static top-0 left-0 bottom-0 z-30 w-84 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 -translate-x-full md:translate-x-0">
+      
+      <!-- 条件入力フィルターエリア -->
+      <div class="p-3 border-b border-slate-800 bg-slate-900/95 space-y-2.5">
+        <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
-            <i data-lucide="bookmark" class="w-4 h-4"></i> 目次・しおり一覧
+            <i data-lucide="filter" class="w-4 h-4"></i> 揚重条件ダイレクト選定
           </span>
           <button id="closeSidebarBtn" class="text-slate-400 hover:text-white md:hidden">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>
-        <!-- 目次内クイック検索 -->
+
+        <!-- 1. 基本仕様 -->
+        <div>
+          <label class="block text-[11px] font-medium text-slate-300 mb-1">仕様 / アタッチメント</label>
+          <select id="selType" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+            <option value="">全仕様から検索</option>
+          </select>
+        </div>
+
+        <!-- 2. 主ジブ角度 & SLウエイト半径 -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-300 mb-1">主ジブ角度</label>
+            <select id="selAngle" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="">指定なし</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-300 mb-1">SL半径</label>
+            <select id="selRadius" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="">指定なし</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 3. 主ジブ長さ & 補ジブ長さ -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-300 mb-1">主ジブ長さ</label>
+            <select id="selMainBoom" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="">指定なし</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-300 mb-1">補ジブ長さ</label>
+            <select id="selJib" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="">指定なし</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ダイレクトジャンプボタン -->
+        <button id="directJumpBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded text-xs flex items-center justify-center gap-1.5 transition-colors shadow">
+          <i data-lucide="zap" class="w-4 h-4"></i> 該当する荷重表を開く
+        </button>
+      </div>
+
+      <!-- 目次テキスト検索 & 結果ツリー -->
+      <div class="p-2 border-b border-slate-800 bg-slate-950/40">
         <div class="relative">
-          <input type="text" id="outlineSearch" placeholder="目次を検索（例: SWSL, 87°, 60m）" class="w-full bg-slate-950 border border-slate-700 text-slate-200 placeholder-slate-500 rounded px-2.5 py-1.5 pl-8 text-xs focus:outline-none focus:border-amber-500">
+          <input type="text" id="outlineSearch" placeholder="目次内フリーワード検索..." class="w-full bg-slate-950 border border-slate-700 text-slate-200 placeholder-slate-500 rounded px-2.5 py-1.5 pl-8 text-xs focus:outline-none focus:border-amber-500">
           <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5"></i>
         </div>
       </div>
 
-      <!-- しおりツリー描画コンテナ -->
-      <div class="flex-1 overflow-y-auto p-2" id="outlineContainer">
-        <div id="outlineLoading" class="text-xs text-slate-400 p-4 text-center">
-          PDFのしおりデータを読み込んでいます...
+      <div class="flex-1 overflow-y-auto p-2 space-y-1" id="outlineContainer">
+        <div class="text-xs text-slate-500 p-4 text-center">
+          PDFを選択すると、ここに全しおりと解析済み条件が反映されます。
         </div>
       </div>
 
-      <!-- フッター情報 -->
       <div class="p-2.5 bg-slate-950/80 border-t border-slate-800 text-[11px] flex items-center justify-between text-slate-400">
-        <span>ステータス:</span>
-        <span id="loadStatus" class="text-amber-400 font-medium">PDF未選択</span>
+        <span>解析完了しおり数:</span>
+        <span id="parsedCount" class="font-tech text-amber-400 font-bold">0 件</span>
       </div>
     </aside>
 
     <!-- PDF描画エリア -->
     <main class="flex-1 overflow-auto bg-slate-950 relative" id="pdfViewerArea">
-      <!-- 初回ファイル選択画面（未読込時） -->
       <div id="dropPrompt" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 text-center z-10">
         <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-lg shadow-amber-500/5">
           <i data-lucide="file-text" class="w-8 h-8"></i>
         </div>
         <h2 class="text-lg font-bold text-white mb-2">CC6800荷重表.pdf を選択してください</h2>
         <p class="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
-          原本PDFファイルを選択すると、PDF内の**すべての公式しおり（目次）**を自動解析し、サイドバーから1タップでジャンプできるようになります。
+          原本PDFを選択すると、PDF内の**4,823ページ分のしおり**を全自動で読み込み、「主ジブ長さ」「補ジブ長さ」「SL半径」「角度」の選定メニューを瞬時に構築します。
         </p>
         <label class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-2.5 rounded-lg text-sm flex items-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20 transition-all transform active:scale-95">
           <i data-lucide="upload" class="w-4 h-4"></i>
@@ -128,7 +169,6 @@
         </label>
       </div>
 
-      <!-- 描画キャンバス -->
       <div id="pdfCanvasContainer" class="hidden">
         <canvas id="pdfCanvas"></canvas>
       </div>
@@ -143,7 +183,9 @@
     let pageRendering = false;
     let pageNumPending = null;
     let scale = 1.35;
-    let fullOutline = [];
+    
+    // 解析した全しおりデータベース
+    let bookmarkDatabase = [];
 
     const canvas = document.getElementById('pdfCanvas');
     const ctx = canvas.getContext('2d');
@@ -185,58 +227,42 @@
       queueRenderPage(pageNum);
     }
 
-    // PDFファイル読み込み
+    // PDF読み込み・解析
     function loadPdfFile(file) {
-      document.getElementById('loadStatus').innerText = '解析中...';
       const fileReader = new FileReader();
-      fileReader.onload = function() {
+      fileReader.onload = async function() {
         const typedarray = new Uint8Array(this.result);
-        pdfjsLib.getDocument(typedarray).promise.then(async function(doc) {
-          pdfDoc = doc;
+        try {
+          pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
           document.getElementById('pageTotal').innerText = `/ ${pdfDoc.numPages}`;
           document.getElementById('pageInput').max = pdfDoc.numPages;
           document.getElementById('dropPrompt').classList.add('hidden');
           document.getElementById('pdfCanvasContainer').classList.remove('hidden');
-          document.getElementById('loadStatus').innerText = '準備完了';
 
-          // PDF内部のしおり（Outline）を自動抽出
+          // しおりデータの取得と構造解析
           const outline = await pdfDoc.getOutline();
-          const outlineContainer = document.getElementById('outlineContainer');
-          outlineContainer.innerHTML = '';
-
-          if (!outline || outline.length === 0) {
-            outlineContainer.innerHTML = '<div class="text-xs text-slate-500 p-3 text-center">しおり情報が見つかりませんでした。</div>';
-          } else {
-            fullOutline = outline;
-            renderOutline(outline, outlineContainer);
+          bookmarkDatabase = [];
+          if (outline) {
+            await parseOutlineTree(outline);
+            populateDropdownFilters();
+            renderBookmarkList(bookmarkDatabase);
+            document.getElementById('parsedCount').innerText = `${bookmarkDatabase.length} 件`;
           }
 
           renderPage(1);
-        }).catch(err => {
-          alert('PDFの読み込みに失敗しました: ' + err.message);
-          document.getElementById('loadStatus').innerText = 'エラー';
-        });
+        } catch (err) {
+          alert('PDFの読み込みまたは解析に失敗しました: ' + err.message);
+        }
       };
       fileReader.readAsArrayBuffer(file);
     }
 
-    // しおりの階層ツリー描画関数
-    async function renderOutline(items, container, depth = 0) {
+    // しおりの再帰解析（タイトルから条件を自動抽出）
+    async function parseOutlineTree(items, parentContext = {}) {
       for (const item of items) {
-        const wrapper = document.createElement('div');
-        wrapper.className = `outline-item-wrapper ${depth > 0 ? 'ml-3 pl-2 border-l border-slate-800' : 'mb-1'}`;
+        let title = item.title.trim();
+        let targetPage = null;
 
-        const row = document.createElement('div');
-        row.className = "group flex items-center justify-between px-2 py-1.5 rounded hover:bg-slate-800 cursor-pointer text-xs transition-colors";
-        
-        // タイトル
-        const titleSpan = document.createElement('span');
-        titleSpan.className = depth === 0 ? "font-bold text-slate-200 group-hover:text-amber-400 truncate" : "text-slate-300 group-hover:text-amber-400 truncate";
-        titleSpan.innerText = item.title;
-        row.appendChild(titleSpan);
-
-        // 宛先ページ番号の取得
-        let targetPageNumber = null;
         if (item.dest) {
           let dest = item.dest;
           if (typeof dest === 'string') {
@@ -244,63 +270,182 @@
           }
           if (dest && dest[0]) {
             const pageIndex = await pdfDoc.getPageIndex(dest[0]);
-            targetPageNumber = pageIndex + 1;
+            targetPage = pageIndex + 1;
           }
         }
 
-        if (targetPageNumber) {
-          const pageBadge = document.createElement('span');
-          pageBadge.className = "font-tech text-[11px] text-slate-500 group-hover:text-amber-400 font-bold ml-2 shrink-0";
-          pageBadge.innerText = `P.${targetPageNumber}`;
-          row.appendChild(pageBadge);
+        // 親の階層情報を引き継ぎ
+        let context = { ...parentContext };
 
-          row.dataset.page = targetPageNumber;
-          row.onclick = () => {
-            goToPage(targetPageNumber);
-            if (window.innerWidth < 768) {
-              document.getElementById('sidebar').classList.add('-translate-x-full');
-            }
-          };
+        // 形式判定 (SH, LH, SSL, SWSL, LF etc.)
+        if (title.includes('SWSL')) context.type = 'SWSL';
+        else if (title.includes('SSL/LSL')) context.type = 'SSL/LSL';
+        else if (title.includes('SSL')) context.type = 'SSL';
+        else if (title.includes('SH/LH')) context.type = 'SH/LH';
+        else if (title.includes('SH')) context.type = 'SH';
+        else if (title.includes('LH')) context.type = 'LH';
+        else if (title.includes('LFVL') || title.includes('LF')) context.type = 'LFVL';
+
+        // 角度判定 (87°, 85°, 75°, 65° 等)
+        const angleMatch = title.match(/(\d{2})[°度]/);
+        if (angleMatch) context.angle = angleMatch[1] + '°';
+
+        // SL半径判定 (24m, 21m, 18m, 15m 等)
+        const radiusMatch = title.match(/SL[^\d]*(\d{1,2})m/i) || title.match(/半径[^\d]*(\d{1,2})m/);
+        if (radiusMatch) context.radius = radiusMatch[1] + 'm';
+
+        // 主ジブ長さ / 補ジブ長さ判定
+        // 例: "主ジブ60m", "補ジブ48m", "60m + 48m", "60m"
+        const mainMatch = title.match(/主(?:ジブ)?[^\d]*(\d{2,3})m/) || title.match(/^(\d{2,3})m/);
+        if (mainMatch) context.mainBoom = mainMatch[1] + 'm';
+
+        const jibMatch = title.match(/補(?:ジブ)?[^\d]*(\d{2,3})m/) || title.match(/\+\s*(\d{2,3})m/);
+        if (jibMatch) context.jib = jibMatch[1] + 'm';
+
+        // 単純な数値＋m の組み合わせがある場合
+        const multiM = title.match(/(\d{2,3})m[^\d]+(\d{2,3})m/);
+        if (multiM) {
+          context.mainBoom = multiM[1] + 'm';
+          context.jib = multiM[2] + 'm';
         }
 
-        wrapper.appendChild(row);
+        if (targetPage) {
+          bookmarkDatabase.push({
+            title: title,
+            page: targetPage,
+            type: context.type || 'その他',
+            angle: context.angle || '',
+            radius: context.radius || '',
+            mainBoom: context.mainBoom || '',
+            jib: context.jib || ''
+          });
+        }
 
-        // 子階層の再帰描画
         if (item.items && item.items.length > 0) {
-          const childContainer = document.createElement('div');
-          renderOutline(item.items, childContainer, depth + 1);
-          wrapper.appendChild(childContainer);
+          await parseOutlineTree(item.items, context);
         }
-
-        container.appendChild(wrapper);
       }
     }
 
-    // 現在ページのしおりをハイライト
+    // 抽出された条件からドロップダウンの選択肢を生成
+    function populateDropdownFilters() {
+      const types = [...new Set(bookmarkDatabase.map(b => b.type).filter(Boolean))];
+      const angles = [...new Set(bookmarkDatabase.map(b => b.angle).filter(Boolean))].sort((a,b) => parseInt(b)-parseInt(a));
+      const radiuses = [...new Set(bookmarkDatabase.map(b => b.radius).filter(Boolean))].sort((a,b) => parseInt(b)-parseInt(a));
+      const mainBooms = [...new Set(bookmarkDatabase.map(b => b.mainBoom).filter(Boolean))].sort((a,b) => parseInt(a)-parseInt(b));
+      const jibs = [...new Set(bookmarkDatabase.map(b => b.jib).filter(Boolean))].sort((a,b) => parseInt(a)-parseInt(b));
+
+      fillSelect('selType', types, '全仕様から検索');
+      fillSelect('selAngle', angles, '指定なし');
+      fillSelect('selRadius', radiuses, '指定なし');
+      fillSelect('selMainBoom', mainBooms, '指定なし');
+      fillSelect('selJib', jibs, '指定なし');
+    }
+
+    function fillSelect(elementId, items, defaultText) {
+      const sel = document.getElementById(elementId);
+      sel.innerHTML = `<option value="">${defaultText}</option>` + 
+        items.map(item => `<option value="${item}">${item}</option>`).join('');
+    }
+
+    // しおり一覧の描画
+    function renderBookmarkList(list) {
+      const container = document.getElementById('outlineContainer');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = '<div class="text-xs text-slate-500 p-4 text-center">条件に一致する荷重表が見つかりません。</div>';
+        return;
+      }
+
+      const frag = document.createDocumentFragment();
+      list.forEach(item => {
+        const btn = document.createElement('div');
+        btn.className = "outline-item group flex items-center justify-between px-2.5 py-1.5 rounded bg-slate-950/40 hover:bg-slate-800 border border-slate-800/80 hover:border-amber-500/50 cursor-pointer text-xs transition-colors";
+        btn.dataset.page = item.page;
+
+        btn.innerHTML = `
+          <div class="truncate pr-2">
+            <span class="font-medium text-slate-200 group-hover:text-amber-400">${item.title}</span>
+            <div class="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+              ${item.type ? `<span class="bg-slate-800 px-1 py-0.2 rounded">${item.type}</span>` : ''}
+              ${item.angle ? `<span>${item.angle}</span>` : ''}
+              ${item.radius ? `<span>${item.radius}</span>` : ''}
+              ${item.mainBoom ? `<span>主:${item.mainBoom}</span>` : ''}
+              ${item.jib ? `<span>補:${item.jib}</span>` : ''}
+            </div>
+          </div>
+          <span class="font-tech text-amber-400 font-bold ml-1 shrink-0">P.${item.page}</span>
+        `;
+
+        btn.onclick = () => {
+          goToPage(item.page);
+          if (window.innerWidth < 768) {
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+          }
+        };
+        frag.appendChild(btn);
+      });
+      container.appendChild(frag);
+    }
+
+    // 条件選択によるリアルタイム絞り込み & ダイレクトジャンプ
+    function filterBookmarks() {
+      const t = document.getElementById('selType').value;
+      const a = document.getElementById('selAngle').value;
+      const r = document.getElementById('selRadius').value;
+      const m = document.getElementById('selMainBoom').value;
+      const j = document.getElementById('selJib').value;
+      const q = document.getElementById('outlineSearch').value.toLowerCase().trim();
+
+      return bookmarkDatabase.filter(b => {
+        if (t && b.type !== t) return false;
+        if (a && b.angle !== a) return false;
+        if (r && b.radius !== r) return false;
+        if (m && b.mainBoom !== m) return false;
+        if (j && b.jib !== j) return false;
+        if (q && !b.title.toLowerCase().includes(q)) return false;
+        return true;
+      });
+    }
+
+    // フィルター操作時に一覧を自動更新
+    ['selType', 'selAngle', 'selRadius', 'selMainBoom', 'selJib'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        const filtered = filterBookmarks();
+        renderBookmarkList(filtered);
+      });
+    });
+
+    document.getElementById('outlineSearch').addEventListener('input', () => {
+      const filtered = filterBookmarks();
+      renderBookmarkList(filtered);
+    });
+
+    // 「該当する荷重表を開く」ボタンで先頭の一致ページへ直接ジャンプ
+    document.getElementById('directJumpBtn').addEventListener('click', () => {
+      const filtered = filterBookmarks();
+      if (filtered.length > 0) {
+        goToPage(filtered[0].page);
+        if (window.innerWidth < 768) {
+          document.getElementById('sidebar').classList.add('-translate-x-full');
+        }
+      } else {
+        alert('選択された条件に一致するページが見つかりませんでした。条件を少し緩めてお試しください。');
+      }
+    });
+
     function highlightActiveBookmark(currentPage) {
-      document.querySelectorAll('.outline-item-wrapper > div').forEach(el => {
+      document.querySelectorAll('.outline-item').forEach(el => {
         if (parseInt(el.dataset.page) === currentPage) {
-          el.classList.add('bg-amber-500/20', 'border', 'border-amber-500/50');
+          el.classList.add('bg-amber-500/20', 'border-amber-500');
         } else {
-          el.classList.remove('bg-amber-500/20', 'border', 'border-amber-500/50');
+          el.classList.remove('bg-amber-500/20', 'border-amber-500');
         }
       });
     }
 
-    // 目次内リアルタイム検索
-    document.getElementById('outlineSearch').addEventListener('input', (e) => {
-      const q = e.target.value.toLowerCase().trim();
-      document.querySelectorAll('#outlineContainer .outline-item-wrapper').forEach(wrapper => {
-        const text = wrapper.innerText.toLowerCase();
-        if (text.includes(q)) {
-          wrapper.style.display = '';
-        } else {
-          wrapper.style.display = 'none';
-        }
-      });
-    });
-
-    // イベントリスナー設定
+    // イベント設定
     document.getElementById('filePicker').addEventListener('change', (e) => loadPdfFile(e.target.files[0]));
     document.getElementById('mainFilePicker').addEventListener('change', (e) => loadPdfFile(e.target.files[0]));
 
