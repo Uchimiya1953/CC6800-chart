@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TEREX CC6800 荷重表ナビゲーター (SWSL確定版)</title>
+  <title>TEREX CC6800 荷重表ナビゲーター</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -38,7 +38,7 @@
       <div class="bg-amber-500 text-slate-950 font-tech font-bold px-2 py-0.5 rounded text-sm tracking-wider">CC6800</div>
       <div>
         <h1 class="text-sm md:text-base font-bold text-white leading-tight">SWSL 荷重表ダイレクトビューアー</h1>
-        <p class="text-[10px] text-slate-400">実機PDF完全連動・ダイレクトマッピング確定版</p>
+        <p class="text-[10px] text-slate-400">PDF目次ツリー完全連動・確実ジャンプ版</p>
       </div>
     </div>
 
@@ -125,16 +125,7 @@
           </div>
         </div>
 
-        <!-- 3. SLマスト半径 -->
-        <div>
-          <label class="block text-[11px] font-medium text-slate-300 mb-0.5">SLマスト半径</label>
-          <select id="selMastRadius" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
-            <option value="24.5">24.5 m (標準)</option>
-            <option value="15.5">15.5 m (半径15m時など)</option>
-          </select>
-        </div>
-
-        <!-- 4. 主ジブ長さ & 補ジブ長さ -->
+        <!-- 3. 主ジブ長さ & 補ジブ長さ -->
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-[11px] font-medium text-slate-300 mb-0.5">主ジブ長さ</label>
@@ -204,7 +195,7 @@
   </div>
 
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
 
     const FILE_MAP = {
       1: "③-1_0335-2375.pdf",
@@ -217,92 +208,17 @@
     let pageRendering = false;
     let pageNumPending = null;
     let scale = 1.35;
-    let rawBookmarks = [];
+    let bookmarkTree = [];
+    let flatBookmarks = [];
 
     const canvas = document.getElementById('pdfCanvas');
     const ctx = canvas.getContext('2d');
 
-    // ★ 実機PDF解析から抽出した、各ブーム（補ジブ30m）の正確な開始ページ辞書 ★
-    // キー形式: "角度_半径_CW_CB_ブーム"
-    const EXACT_BOOM_STARTS = {
-      // 87度・半径24m・CW250t・CB80t (各ブーム補ジブ30mの開始ページ)
-      "87_24_250_80_48": 2,    // 48m + 30m (P.2 / DZ-0532-2)
-      "87_24_250_80_54": 12,   // 54m + 30m (P.12 / DZ-0532-16)
-      "87_24_250_80_60": 22,   // 60m + 30m (P.22 / DZ-0532-30)
-      "87_24_250_80_66": 33,   // 66m + 30m (P.33 / DZ-0532-44)
-      "87_24_250_80_72": 44,   // 72m + 30m (P.44 / DZ-0532-58)
-      "87_24_250_80_78": 55,   // 78m + 30m (P.55 / DZ-0532-72)
-      "87_24_250_80_84": 82,   // 84m + 30m (P.82 / DZ-0532-86) ★画像の実測値P.82に完全一致
-      "87_24_250_80_90": 94,   // 90m + 30m (P.94 / DZ-0532-100)
-      "87_24_250_80_96": 106,  // 96m + 30m (P.106 / DZ-0532-114)
-
-      // 87度・半径24m・CW170t・CB0t (各ブーム補ジブ30mの開始ページ)
-      "87_24_170_0_48": 128,  // 48m + 30m (P.128 / DZ-0532-128)
-      "87_24_170_0_54": 142,  // 54m + 30m (P.142 / DZ-0532-142)
-      "87_24_170_0_60": 156,  // 60m + 30m (P.156 / DZ-0532-156)
-      "87_24_170_0_66": 170,  // 66m + 30m (P.170 / DZ-0532-170)
-      "87_24_170_0_72": 184,  // 72m + 30m (P.184 / DZ-0532-184)
-      "87_24_170_0_78": 198,  // 78m + 30m (P.198 / DZ-0532-198)
-      "87_24_170_0_84": 212,  // 84m + 30m (P.212 / DZ-0532-212)
-
-      // 87度・半径21m・CW250t・CB80t
-      "87_21_250_80_48": 182,
-      "87_21_250_80_54": 196,
-      "87_21_250_80_60": 210,
-      "87_21_250_80_66": 224,
-      "87_21_250_80_72": 238,
-
-      // 87度・半径18m・CW250t・CB80t
-      "87_18_250_80_48": 363,
-      "87_18_250_80_54": 377,
-      "87_18_250_80_60": 391,
-
-      // 87度・半径15m・CW250t・CB80t
-      "87_15_250_80_48": 522,
-      "87_15_250_80_54": 536,
-      "87_15_250_80_60": 550,
-
-      // 85度・半径24m・CW250t・CB80t
-      "85_24_250_80_48": 642,
-      "85_24_250_80_54": 656,
-      "85_24_250_80_60": 670,
-
-      // 75度・半径24m・CW250t・CB80t
-      "75_24_250_80_48": 1322,
-      "75_24_250_80_54": 1336,
-      "75_24_250_80_60": 1350,
-
-      // 65度 (③-2収録)
-      "65_24_250_80_48": 1,
-      "65_24_250_80_54": 15,
-      "65_24_250_80_60": 29,
-      "65_24_250_80_66": 43,
-      "65_24_250_80_72": 57,
-      "65_24_250_80_78": 71,
-      "65_24_250_80_84": 85,
-      "65_24_170_0_48": 93,
-      "65_24_170_0_54": 107
-    };
-
-    const JIB_STEPS = [30, 36, 42, 48, 54, 60, 66, 72, 78, 84];
-
-    // 半径変更時にマスト半径を自動連動
-    document.getElementById('selRadius').addEventListener('change', (e) => {
-      const rad = e.target.value;
-      const mastSel = document.getElementById('selMastRadius');
-      if (rad === '15') mastSel.value = '15.5';
-      else mastSel.value = '24.5';
-    });
-
-    // カウンターウエイト変更時にセントラルバラストを自動連動
+    // ウエイト連動
     document.getElementById('selCW').addEventListener('change', (e) => {
-      const cw = e.target.value;
-      const cbSel = document.getElementById('selCB');
-      if (cw === '170') cbSel.value = '0';
-      else cbSel.value = '80';
+      document.getElementById('selCB').value = (e.target.value === '170') ? '0' : '80';
     });
 
-    // 手動ファイル切替ボタン
     document.getElementById('btnSwitchFile1').addEventListener('click', () => switchPdfFile(1, 1));
     document.getElementById('btnSwitchFile2').addEventListener('click', () => switchPdfFile(2, 1));
 
@@ -340,10 +256,12 @@
         document.getElementById('pageInput').max = pdfDoc.numPages;
 
         const outline = await pdfDoc.getOutline();
-        rawBookmarks = [];
+        flatBookmarks = [];
+        bookmarkTree = outline || [];
+
         if (outline) {
-          await extractFlatBookmarks(outline);
-          renderBookmarkList(rawBookmarks);
+          await parseBookmarks(outline);
+          renderBookmarkList(flatBookmarks);
         } else {
           document.getElementById('outlineContainer').innerHTML = 
             '<div class="text-xs text-slate-500 p-4 text-center">しおり情報がありません</div>';
@@ -357,7 +275,7 @@
       }
     }
 
-    async function extractFlatBookmarks(items) {
+    async function parseBookmarks(items, parentTitle = "") {
       for (const item of items) {
         let title = item.title.trim();
         let targetPage = null;
@@ -373,12 +291,19 @@
           }
         }
 
+        const node = {
+          title: title,
+          page: targetPage,
+          parent: parentTitle,
+          children: []
+        };
+
         if (targetPage) {
-          rawBookmarks.push({ title: title, page: targetPage });
+          flatBookmarks.push(node);
         }
 
         if (item.items && item.items.length > 0) {
-          await extractFlatBookmarks(item.items);
+          await parseBookmarks(item.items, title);
         }
       }
     }
@@ -451,41 +376,83 @@
       queueRenderPage(pageNum);
     }
 
-    // ★ 完全一致ダイレクトジャンプ ★
+    // ★ しおりツリーを検索して正規ページを正確に特定するジャンプ関数 ★
     document.getElementById('directJumpBtn').addEventListener('click', async () => {
       const angle = document.getElementById('selAngle').value;
       const radius = document.getElementById('selRadius').value;
       const cw = document.getElementById('selCW').value;
-      const cb = document.getElementById('selCB').value;
-      const boom = parseInt(document.getElementById('selMainBoom').value);
-      const jib = parseInt(document.getElementById('selJib').value);
+      const boom = document.getElementById('selMainBoom').value;
+      const jib = document.getElementById('selJib').value;
 
       const targetFile = (angle === '65') ? 2 : 1;
       if (currentFileKey !== targetFile) {
         await switchPdfFile(targetFile, 1);
       }
 
-      // 該当ブームの開始ページ（補ジブ30m）を取得
-      const key = `${angle}_${radius}_${cw}_${cb}_${boom}`;
-      let boomBasePage = EXACT_BOOM_STARTS[key];
+      // 1. まず該当の「角度」と「半径」が含まれる大見出しのしおりを特定
+      const rootTag = `SWSL${angle}°_SL半径${radius}m`;
+      const rootBm = flatBookmarks.find(b => b.title.replace(/\s+/g, '').includes(rootTag));
 
-      if (!boomBasePage) {
-        const fbKey = `${angle}_${radius}_250_80_${boom}`;
-        boomBasePage = EXACT_BOOM_STARTS[fbKey];
+      // 2. 「96m」や「72m」など、しおりの中にブーム長やジブ長が含まれている項目を探す
+      // しおり内のブーム見出し（例: 96m や 96 m）を探索
+      let matchedPage = null;
+
+      // 範囲を絞り込む：次の大見出しまでの間から探す
+      let startIndex = 0;
+      let endIndex = flatBookmarks.length;
+
+      if (rootBm) {
+        const rIdx = flatBookmarks.indexOf(rootBm);
+        startIndex = rIdx;
+        for (let i = rIdx + 1; i < flatBookmarks.length; i++) {
+          if (flatBookmarks[i].title.includes('SWSL') && flatBookmarks[i].title.includes('SL半径')) {
+            endIndex = i;
+            break;
+          }
+        }
       }
 
-      if (!boomBasePage) {
-        alert(`指定された仕様（主ジブ${boom}m / ${angle}° / 半径${radius}m）のセクションが見つかりませんでした。`);
-        return;
+      const sectionBookmarks = flatBookmarks.slice(startIndex, endIndex);
+
+      // セクション内からブーム長とジブ長に最も合致するしおりを検索
+      const boomJibQuery = `${boom}m+${jib}m`;
+      const boomJibAlt = `${boom}m`;
+
+      let targetBm = sectionBookmarks.find(b => b.title.replace(/\s+/g, '').includes(boomJibQuery));
+
+      if (!targetBm) {
+        // ブーム長で探す
+        const boomBm = sectionBookmarks.find(b => b.title.replace(/\s+/g, '') === `${boom}m` || b.title.replace(/\s+/g, '').includes(`${boom}m_`));
+        if (boomBm) {
+          // ジブのステップ（30m=0, 36m=1, 42m=2...）
+          const jSteps = [30, 36, 42, 48, 54, 60, 66, 72, 78, 84];
+          const jOffset = Math.max(0, jSteps.indexOf(parseInt(jib)));
+          matchedPage = boomBm.page + jOffset;
+        }
+      } else {
+        matchedPage = targetBm.page;
       }
 
-      // 補ジブによるオフセット（30m=0, 36m=1, 42m=2, 48m=3, 54m=4... 各6m刻みで1ページ進む）
-      const jIdx = JIB_STEPS.indexOf(jib);
-      const jibOffset = (jIdx !== -1) ? jIdx : 0;
+      // 見つからなかった場合のフォールバック（大見出しベース）
+      if (!matchedPage) {
+        if (rootBm) {
+          // CW 250t / 170t でブロックを分ける
+          let baseP = rootBm.page;
+          if (cw === '170') {
+            baseP += 126;
+          }
+          // ブーム基準インデックス
+          const BOOM_OFFSETS = { 48:0, 54:10, 60:20, 66:31, 72:42, 78:53, 84:64, 90:75, 96:86 };
+          const jSteps = [30, 36, 42, 48, 54, 60, 66, 72, 78, 84];
+          const bOff = BOOM_OFFSETS[boom] !== undefined ? BOOM_OFFSETS[boom] : 0;
+          const jOff = Math.max(0, jSteps.indexOf(parseInt(jib)));
+          matchedPage = baseP + bOff + jOff;
+        } else {
+          matchedPage = 2;
+        }
+      }
 
-      const finalPage = boomBasePage + jibOffset;
-      const safePage = Math.min(pdfDoc.numPages, Math.max(1, finalPage));
-
+      const safePage = Math.min(pdfDoc.numPages, Math.max(1, matchedPage));
       goToPage(safePage);
 
       if (window.innerWidth < 768) {
@@ -495,7 +462,7 @@
 
     document.getElementById('outlineSearch').addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase().trim();
-      const filtered = rawBookmarks.filter(b => b.title.toLowerCase().includes(q));
+      const filtered = flatBookmarks.filter(b => b.title.toLowerCase().includes(q));
       renderBookmarkList(filtered);
     });
 
