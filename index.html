@@ -7,6 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- ステップ1で生成した正確なページマップ -->
+  <script src="./page_map.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
     body { font-family: 'Noto Sans JP', sans-serif; }
@@ -38,19 +40,17 @@
       <div class="bg-amber-500 text-slate-950 font-tech font-bold px-2 py-0.5 rounded text-sm tracking-wider">CC6800</div>
       <div>
         <h1 class="text-sm md:text-base font-bold text-white leading-tight">SWSL 荷重表ダイレクトビューアー</h1>
-        <p class="text-[10px] text-slate-400">③-1 (87°/85°/75°) & ③-2 (65°) 統合ナビゲーション</p>
+        <p class="text-[10px] text-slate-400">100% データベース完全連動版</p>
       </div>
     </div>
 
     <!-- ページ送り & 操作ツール -->
     <div class="flex items-center gap-2">
-      <!-- 現在開いているファイル表示バッジ -->
       <div class="hidden sm:flex items-center bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs">
         <span class="text-slate-400 mr-1.5">ファイル:</span>
-        <span id="activeFileBadge" class="font-bold text-amber-400 font-tech">③-1 (87°/85°/75°)</span>
+        <span id="activeFileBadge" class="font-bold text-amber-400 font-tech">③-1</span>
       </div>
 
-      <!-- ページ送り -->
       <div class="flex items-center bg-slate-800 rounded border border-slate-700 px-2 py-1">
         <button id="prevPageBtn" class="text-slate-300 hover:text-amber-400 p-1"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
         <input type="number" id="pageInput" min="1" value="1" class="w-14 bg-slate-900 text-center font-tech text-amber-400 text-sm font-bold border border-slate-700 rounded mx-1 py-0.5 focus:outline-none focus:border-amber-500">
@@ -58,7 +58,6 @@
         <button id="nextPageBtn" class="text-slate-300 hover:text-amber-400 p-1"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
       </div>
 
-      <!-- ズーム -->
       <div class="hidden sm:flex items-center bg-slate-800 rounded border border-slate-700 px-1.5 py-1">
         <button id="zoomOutBtn" class="p-1 text-slate-300 hover:text-amber-400" title="縮小"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
         <span id="zoomLevel" class="text-xs font-tech text-slate-300 px-1.5">100%</span>
@@ -88,17 +87,14 @@
           </button>
         </div>
 
-        <!-- 1. 主ジブ角度（選択で対象PDFを自動判定） -->
+        <!-- 1. 主ジブ角度 -->
         <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="block text-[11px] font-medium text-slate-300">主ジブ角度</label>
-            <span id="fileTargetTag" class="text-[10px] bg-slate-800 text-amber-400 px-1.5 py-0.2 rounded font-mono">ファイル: ③-1</span>
-          </div>
+          <label class="block text-[11px] font-medium text-slate-300 mb-1">主ジブ角度</label>
           <select id="selAngle" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
-            <option value="87" data-file="1">87° (③-1収録)</option>
-            <option value="85" data-file="1">85° (③-1収録)</option>
-            <option value="75" data-file="1">75° (③-1収録)</option>
-            <option value="65" data-file="2">65° (③-2収録)</option>
+            <option value="87">87°</option>
+            <option value="85">85°</option>
+            <option value="75">75°</option>
+            <option value="65">65°</option>
           </select>
         </div>
 
@@ -153,7 +149,7 @@
           </select>
         </div>
 
-        <!-- ジャンプボタン -->
+        <!-- ダイレクトジャンプボタン -->
         <button id="directJumpBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded text-xs flex items-center justify-center gap-1.5 transition-colors shadow">
           <i data-lucide="zap" class="w-4 h-4"></i> 該当する荷重表ページを開く
         </button>
@@ -173,7 +169,7 @@
 
       <!-- 手動ファイル切替フッター -->
       <div class="p-2 bg-slate-950/90 border-t border-slate-800 text-[11px] flex items-center justify-between">
-        <span class="text-slate-400">対象ファイル手動切替:</span>
+        <span class="text-slate-400">対象ファイル切替:</span>
         <div class="flex gap-1">
           <button id="btnSwitchFile1" class="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold text-[10px]">③-1</button>
           <button id="btnSwitchFile2" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white font-bold text-[10px]">③-2</button>
@@ -192,7 +188,6 @@
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    // 2つのファイル名
     const FILE_MAP = {
       1: "③-1_0335-2375.pdf",
       2: "③-2_2376-4310.pdf"
@@ -208,13 +203,6 @@
 
     const canvas = document.getElementById('pdfCanvas');
     const ctx = canvas.getContext('2d');
-
-    // 角度変更時にファイルバッジを連動更新
-    document.getElementById('selAngle').addEventListener('change', (e) => {
-      const selected = e.target.options[e.target.selectedIndex];
-      const targetFile = selected.dataset.file;
-      document.getElementById('fileTargetTag').innerText = `ファイル: ③-${targetFile}`;
-    });
 
     // 手動ファイル切替ボタン
     document.getElementById('btnSwitchFile1').addEventListener('click', () => switchPdfFile(1, 1));
@@ -236,7 +224,6 @@
       }
     }
 
-    // PDFファイルのロード・切り替え
     async function switchPdfFile(fileKey, targetPage = 1) {
       if (currentFileKey === fileKey && pdfDoc) {
         goToPage(targetPage);
@@ -254,7 +241,6 @@
         document.getElementById('pageTotal').innerText = `/ ${pdfDoc.numPages}`;
         document.getElementById('pageInput').max = pdfDoc.numPages;
 
-        // しおりの取得
         const outline = await pdfDoc.getOutline();
         rawBookmarks = [];
         if (outline) {
@@ -269,7 +255,7 @@
       } catch (err) {
         console.error(err);
         document.getElementById('outlineContainer').innerHTML = 
-          `<div class="text-xs text-rose-400 p-4 text-center">PDF (${FILE_MAP[fileKey]}) の読み込みに失敗しました。<br>同一フォルダにファイルが配置されているかご確認ください。</div>`;
+          `<div class="text-xs text-rose-400 p-4 text-center">PDF (${FILE_MAP[fileKey]}) の読み込みに失敗しました。</div>`;
       }
     }
 
@@ -367,50 +353,33 @@
       queueRenderPage(pageNum);
     }
 
-    // ダイレクトジャンプ判定ロジック
+    // ★ 100% 正確なデータベース直結ジャンプ ★
     document.getElementById('directJumpBtn').addEventListener('click', async () => {
       const angle = document.getElementById('selAngle').value;
       const radius = document.getElementById('selRadius').value;
-      const mainBoom = parseInt(document.getElementById('selMainBoom').value);
-      const jib = parseInt(document.getElementById('selJib').value);
+      const boom = document.getElementById('selMainBoom').value;
+      const jib = document.getElementById('selJib').value;
 
-      // 65度は ③-2、それ以外(87°, 85°, 75°)は ③-1
-      const targetFileKey = (angle === '65') ? 2 : 1;
+      const key = `${angle}_${radius}_${boom}_${jib}`;
 
-      // 必要ならファイルを切り替える
-      if (currentFileKey !== targetFileKey) {
-        await switchPdfFile(targetFileKey, 1);
-      }
-
-      // しおりから最もマッチする大見出しを検索
-      const searchTag = `SWSL${angle}°_SL半径${radius}m`;
-      let matchedBm = rawBookmarks.find(b => b.title.replace(/\s+/g, '').includes(searchTag));
-
-      if (!matchedBm) {
-        matchedBm = rawBookmarks.find(b => b.title.includes(`${angle}°`) && b.title.includes(`${radius}m`));
-      }
-
-      if (matchedBm) {
-        // ブーム長・ジブ長に応じた相対オフセット計算
-        const booms = [48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108];
-        const jibs = [24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108];
-
-        const bIdx = Math.max(0, booms.indexOf(mainBoom));
-        const jIdx = Math.max(0, jibs.indexOf(jib));
-        const targetOffset = (bIdx * 15) + jIdx;
-
-        const calculatedPage = Math.min(pdfDoc.numPages, matchedBm.page + targetOffset);
-        goToPage(calculatedPage);
+      if (typeof PAGE_DATABASE !== 'undefined' && PAGE_DATABASE[key]) {
+        const info = PAGE_DATABASE[key];
+        
+        // 該当ファイル（③-1 または ③-2）へ自動切替
+        if (currentFileKey !== info.file) {
+          await switchPdfFile(info.file, info.page);
+        } else {
+          goToPage(info.page);
+        }
 
         if (window.innerWidth < 768) {
           document.getElementById('sidebar').classList.add('-translate-x-full');
         }
       } else {
-        alert(`該当する角度(${angle}°)・半径(${radius}m)のセクションが見つかりませんでした。`);
+        alert(`選択された仕様（主ジブ${boom}m + 補ジブ${jib}m / ${angle}° / 半径${radius}m）の荷重表は存在しないか、未スキャンです。組み合わせを変えてお試しください。`);
       }
     });
 
-    // 検索窓フィルター
     document.getElementById('outlineSearch').addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase().trim();
       const filtered = rawBookmarks.filter(b => b.title.toLowerCase().includes(q));
@@ -427,12 +396,10 @@
       });
     }
 
-    // ページ送りボタン
     document.getElementById('prevPageBtn').addEventListener('click', () => { if (pageNum > 1) goToPage(pageNum - 1); });
     document.getElementById('nextPageBtn').addEventListener('click', () => { if (pdfDoc && pageNum < pdfDoc.numPages) goToPage(pageNum + 1); });
     document.getElementById('pageInput').addEventListener('change', (e) => goToPage(e.target.value));
 
-    // ズーム
     document.getElementById('zoomInBtn').addEventListener('click', () => {
       scale = Math.min(3.0, scale + 0.2);
       document.getElementById('zoomLevel').innerText = Math.round((scale / 1.35) * 100) + '%';
@@ -444,7 +411,6 @@
       if (pdfDoc) queueRenderPage(pageNum);
     });
 
-    // サイドバー開閉
     document.getElementById('toggleSidebarBtn').addEventListener('click', () => {
       document.getElementById('sidebar').classList.toggle('-translate-x-full');
     });
@@ -454,7 +420,7 @@
 
     lucide.createIcons();
 
-    // 初回読み込み（③-1からスタート）
+    // 初期ロード
     switchPdfFile(1, 1);
   </script>
 </body>
