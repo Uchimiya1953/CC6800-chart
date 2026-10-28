@@ -20,19 +20,20 @@
       <div class="bg-amber-500 text-slate-950 font-tech font-bold px-2 py-0.5 rounded text-sm tracking-wider">CC6800</div>
       <div>
         <h1 class="text-sm md:text-base font-bold text-white leading-tight">定格総荷重表ナビゲーター</h1>
-        <p class="text-[10px] text-slate-400">TEREX DEMAG GmbH • 全4,823ページ対応原本ビューアー</p>
+        <p class="text-[10px] text-slate-400">TEREX DEMAG GmbH • 全4,823ページ対応 (ダイレクト表示版)</p>
       </div>
     </div>
 
-    <!-- 検索案内バッジ & サイドバートグル -->
     <div class="flex items-center gap-2">
+      <!-- ページ案内 -->
       <div class="hidden sm:flex items-center bg-slate-800 rounded border border-slate-700 px-3 py-1">
-        <span class="text-xs text-slate-400 mr-2">目的ページ目安:</span>
+        <span class="text-xs text-slate-400 mr-2">目的ページ:</span>
         <span id="targetPageBadge" class="font-tech text-amber-400 text-base font-bold">P. 1</span>
       </div>
-      <a id="directOpenBtn" href="https://drive.google.com/file/d/1gwacjRnWaEx30MlsI99Uas_ZZiF4G2I1/view" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1 rounded text-xs flex items-center gap-1 font-medium transition-colors">
-        <i data-lucide="external-link" class="w-3.5 h-3.5 text-amber-400"></i>
-        <span class="hidden md:inline">別タブで開く</span>
+      <!-- 別窓表示・ダウンロード -->
+      <a href="https://drive.google.com/uc?export=download&id=1gwacjRnWaEx30MlsI99Uas_ZZiF4G2I1" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1 rounded text-xs flex items-center gap-1 font-medium transition-colors">
+        <i data-lucide="download" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span>PDFをダウンロード</span>
       </a>
       <button id="toggleSidebarBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 p-1.5 rounded font-bold flex items-center gap-1 text-xs md:hidden">
         <i data-lucide="search" class="w-4 h-4"></i>
@@ -82,7 +83,7 @@
         </div>
 
         <button id="calcPageBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded text-xs flex items-center justify-center gap-1.5 transition-colors shadow">
-          <i data-lucide="compass" class="w-4 h-4"></i> 該当ページ番号を確認
+          <i data-lucide="compass" class="w-4 h-4"></i> 該当ページへジャンプ
         </button>
       </div>
 
@@ -90,62 +91,33 @@
       <div class="flex-1 overflow-y-auto p-3 space-y-1.5" id="quickIndexList">
         <div class="text-[11px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider">主要セクション代表ページ</div>
       </div>
-
-      <!-- 下部ガイド -->
-      <div class="p-3 bg-slate-950/70 border-t border-slate-800 text-[11px] text-slate-400">
-        <p class="leading-relaxed">
-          💡 右側のビューアー上部にある<strong class="text-amber-400">「ページ番号入力枠」</strong>に目的の数字を入れると、エラーを起こさず直接ジャンプできます。
-        </p>
-      </div>
     </aside>
 
-    <!-- PDF表示エリア -->
+    <!-- PDF表示エリア（ブラウザ内蔵リーダーを直接呼び出し） -->
     <main class="flex-1 bg-slate-900 flex flex-col relative overflow-hidden">
-      <!-- ページナビゲーション通知バー -->
-      <div id="navBar" class="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between text-xs">
-        <div class="flex items-center gap-2">
-          <span class="text-amber-400 font-bold flex items-center gap-1">
-            <i data-lucide="info" class="w-4 h-4"></i> 案内:
-          </span>
-          <span id="navGuideText" class="text-slate-200">
-            右側ビューアーのページ欄に「<strong class="text-amber-400 font-tech text-sm">1</strong>」と入力して移動してください
-          </span>
-        </div>
-        <button id="copyPageBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1">
-          <i data-lucide="copy" class="w-3 h-3"></i> ページ番号をコピー
-        </button>
-      </div>
-
-      <!-- 安定表示用 iframe -->
       <iframe 
         id="pdfIframe"
         class="w-full h-full border-0 bg-slate-950"
-        src="https://drive.google.com/file/d/1gwacjRnWaEx30MlsI99Uas_ZZiF4G2I1/preview"
-        allow="autoplay">
+        src="https://drive.google.com/uc?export=view&id=1gwacjRnWaEx30MlsI99Uas_ZZiF4G2I1"
+        type="application/pdf">
       </iframe>
     </main>
   </div>
 
   <script>
-    let currentTargetPage = 1;
+    const FILE_ID = "1gwacjRnWaEx30MlsI99Uas_ZZiF4G2I1";
 
-    // 代表インデックスデータ
     const INDEX_DATA = [
       { title: "作業範囲図 (SH / LH)", page: 1 },
       { title: "SH 36m (定格総荷重表)", page: 2 },
-      { title: "SH 42m (定格総荷重表)", page: 3 },
       { title: "SH 48m (定格総荷重表)", page: 4 },
-      { title: "SH 60m (定格総荷重表)", page: 6 },
       { title: "SH 84m (定格総荷重表)", page: 10 },
-      { title: "SH 96m (定格総荷重表)", page: 12 },
       { title: "SH/LH 48m", page: 13 },
       { title: "LH 42m (定格総荷重表)", page: 24 },
-      { title: "LH 60m (定格総荷重表)", page: 27 },
       { title: "SSL / SSL-LSL 作業範囲図", page: 33 },
       { title: "SSL 42m (SL半径 24m)", page: 34 },
       { title: "SSL 60m (SL半径 24m)", page: 37 },
       { title: "SSL 84m (SL半径 24m)", page: 41 },
-      { title: "SSL 96m (SL半径 24m)", page: 43 },
       { title: "SSL/LSL 102m (SL半径 24m)", page: 114 },
       { title: "SSL/LSL 120m (SL半径 24m)", page: 117 },
       { title: "SSL/LSL 150m (SL半径 24m)", page: 122 },
@@ -158,31 +130,17 @@
       { title: "SWSL 主ブーム108m + 起伏ジブ", page: 2600 }
     ];
 
-    function setTargetPage(page, title = "") {
-      currentTargetPage = page;
+    function jumpToPage(page) {
       document.getElementById('targetPageBadge').innerText = `P. ${page}`;
-      
-      const label = title ? `【${title}】` : '';
-      document.getElementById('navGuideText').innerHTML = 
-        `${label} 右側ビューアーのページ枠に「<strong class="text-amber-400 font-tech text-base mx-1">${page}</strong>」を入力してください`;
+      const iframe = document.getElementById('pdfIframe');
+      // 直接ストリーミングURL + ページ指定
+      iframe.src = `https://drive.google.com/uc?export=view&id=${FILE_ID}#page=${page}`;
 
       if (window.innerWidth < 768) {
         document.getElementById('sidebar').classList.add('-translate-x-full');
       }
     }
 
-    // ページ番号コピー
-    document.getElementById('copyPageBtn').addEventListener('click', () => {
-      navigator.clipboard.writeText(currentTargetPage.toString()).then(() => {
-        const btn = document.getElementById('copyPageBtn');
-        const orig = btn.innerHTML;
-        btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> コピー完了!`;
-        lucide.createIcons();
-        setTimeout(() => { btn.innerHTML = orig; lucide.createIcons(); }, 1500);
-      });
-    });
-
-    // 選択肢の更新
     const boomSelect = document.getElementById('boomLength');
     const jibSelect = document.getElementById('jibLength');
     const configSelect = document.getElementById('configType');
@@ -205,52 +163,42 @@
     configSelect.addEventListener('change', updateOptions);
     updateOptions();
 
-    // 絞り込みボタンの計算処理
     document.getElementById('calcPageBtn').addEventListener('click', () => {
       const type = configSelect.value;
       const boom = parseInt(boomSelect.value);
       let page = 1;
-      let title = "";
 
       if (type === 'SH') {
         const shMap = { 36:2, 42:3, 48:4, 54:5, 60:6, 66:7, 72:8, 78:9, 84:10, 90:11, 96:12 };
         page = shMap[boom] || 2;
-        title = `SH仕様 ${boom}m`;
       } else if (type === 'LH') {
         const lhMap = { 42:24, 48:25, 54:26, 60:27, 66:28, 72:29, 78:30, 84:31, 90:32 };
         page = lhMap[boom] || 24;
-        title = `LH仕様 ${boom}m`;
       } else if (type === 'SH_LH') {
         page = 13;
-        title = `SH/LH仕様 ${boom}m`;
       } else if (type === 'SSL') {
         const sslMap = { 42:34, 48:35, 54:36, 60:37, 66:38, 72:39, 78:40, 84:41, 90:42, 96:43 };
         page = sslMap[boom] || 34;
-        title = `SSL仕様 ${boom}m`;
       } else if (type === 'SSL_LSL') {
         const lslMap = { 102:114, 108:115, 114:116, 120:117, 126:118, 132:119, 138:120, 144:121, 150:122 };
         page = lslMap[boom] || 114;
-        title = `SSL/LSL仕様 ${boom}m`;
       } else if (type.startsWith('SWSL')) {
         const swslMap = { 48:180, 54:250, 60:320, 66:480, 72:650, 78:850, 84:1100, 90:1450, 96:1800, 102:2200, 108:2600 };
         page = swslMap[boom] || 180;
-        title = `SWSL仕様 ブーム${boom}m+ジブ${jibSelect.value}m`;
       }
 
-      setTargetPage(page, title);
+      jumpToPage(page);
     });
 
-    // クイックインデックスボタン生成
     const quickList = document.getElementById('quickIndexList');
     INDEX_DATA.forEach(item => {
       const btn = document.createElement('button');
       btn.className = "w-full text-left px-2.5 py-1.5 rounded bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/50 text-xs transition-colors flex items-center justify-between";
       btn.innerHTML = `<span class="truncate text-slate-300">${item.title}</span><span class="font-tech text-amber-400 font-bold ml-2">P.${item.page}</span>`;
-      btn.onclick = () => setTargetPage(item.page, item.title);
+      btn.onclick = () => jumpToPage(item.page);
       quickList.appendChild(btn);
     });
 
-    // モバイルメニュー
     document.getElementById('toggleSidebarBtn').addEventListener('click', () => {
       document.getElementById('sidebar').classList.toggle('-translate-x-full');
     });
