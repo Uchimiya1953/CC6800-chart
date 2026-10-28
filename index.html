@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TEREX DEMAG CC6800 荷重表スマートナビゲーター</title>
+  <title>TEREX CC6800 荷重表ナビゲーター (SWSL版)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -37,26 +37,28 @@
     <div class="flex items-center gap-3">
       <div class="bg-amber-500 text-slate-950 font-tech font-bold px-2 py-0.5 rounded text-sm tracking-wider">CC6800</div>
       <div>
-        <h1 class="text-sm md:text-base font-bold text-white leading-tight">定格総荷重表スマートナビゲーター</h1>
-        <p class="text-[10px] text-slate-400">TEREX DEMAG GmbH • 揚重条件ダイレクト選定</p>
+        <h1 class="text-sm md:text-base font-bold text-white leading-tight">SWSL 荷重表ダイレクトビューアー</h1>
+        <p class="text-[10px] text-slate-400">③-1 (87°/85°/75°) & ③-2 (65°) 統合ナビゲーション</p>
       </div>
     </div>
 
     <!-- ページ送り & 操作ツール -->
     <div class="flex items-center gap-2">
-      <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1 rounded text-xs flex items-center gap-1 font-medium cursor-pointer transition-colors" title="別のPDFを開く">
-        <i data-lucide="folder-open" class="w-3.5 h-3.5 text-amber-400"></i>
-        <span class="hidden sm:inline">PDF変更</span>
-        <input type="file" id="filePicker" accept=".pdf" class="hidden">
-      </label>
+      <!-- 現在開いているファイル表示バッジ -->
+      <div class="hidden sm:flex items-center bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs">
+        <span class="text-slate-400 mr-1.5">ファイル:</span>
+        <span id="activeFileBadge" class="font-bold text-amber-400 font-tech">③-1 (87°/85°/75°)</span>
+      </div>
 
+      <!-- ページ送り -->
       <div class="flex items-center bg-slate-800 rounded border border-slate-700 px-2 py-1">
         <button id="prevPageBtn" class="text-slate-300 hover:text-amber-400 p-1"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-        <input type="number" id="pageInput" min="1" max="4823" value="1" class="w-14 bg-slate-900 text-center font-tech text-amber-400 text-sm font-bold border border-slate-700 rounded mx-1 py-0.5 focus:outline-none focus:border-amber-500">
-        <span id="pageTotal" class="text-xs text-slate-400 font-tech">/ 4,823</span>
+        <input type="number" id="pageInput" min="1" value="1" class="w-14 bg-slate-900 text-center font-tech text-amber-400 text-sm font-bold border border-slate-700 rounded mx-1 py-0.5 focus:outline-none focus:border-amber-500">
+        <span id="pageTotal" class="text-xs text-slate-400 font-tech">/ -</span>
         <button id="nextPageBtn" class="text-slate-300 hover:text-amber-400 p-1"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
       </div>
 
+      <!-- ズーム -->
       <div class="hidden sm:flex items-center bg-slate-800 rounded border border-slate-700 px-1.5 py-1">
         <button id="zoomOutBtn" class="p-1 text-slate-300 hover:text-amber-400" title="縮小"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
         <span id="zoomLevel" class="text-xs font-tech text-slate-300 px-1.5">100%</span>
@@ -72,10 +74,10 @@
   <!-- メインエリア -->
   <div class="flex flex-1 overflow-hidden relative">
     
-    <!-- 左側サイドバー（条件入力パネル） -->
+    <!-- 左側サイドバー（条件入力 & しおりパネル） -->
     <aside id="sidebar" class="absolute md:static top-0 left-0 bottom-0 z-30 w-84 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 -translate-x-full md:translate-x-0">
       
-      <!-- 条件入力フィルターエリア -->
+      <!-- 条件入力フィルター -->
       <div class="p-3 border-b border-slate-800 bg-slate-900/95 space-y-2.5">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
@@ -86,98 +88,102 @@
           </button>
         </div>
 
-        <!-- 1. 仕様選択 -->
+        <!-- 1. 主ジブ角度（選択で対象PDFを自動判定） -->
         <div>
-          <label class="block text-[11px] font-medium text-slate-300 mb-1">仕様 / アタッチメント</label>
-          <select id="selType" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
-            <option value="SWSL">SWSL (スーパーリフト+起伏ジブ)</option>
-            <option value="SSL">SSL (スーパーリフト主ジブ 42〜96m)</option>
-            <option value="SSL/LSL">SSL/LSL (SL主ジブ 102〜150m)</option>
-            <option value="SH">SH (主ジブ 36〜96m)</option>
-            <option value="LH">LH (主ジブ 42〜90m)</option>
-            <option value="SH/LH">SH/LH (主ジブ 48〜108m)</option>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-[11px] font-medium text-slate-300">主ジブ角度</label>
+            <span id="fileTargetTag" class="text-[10px] bg-slate-800 text-amber-400 px-1.5 py-0.2 rounded font-mono">ファイル: ③-1</span>
+          </div>
+          <select id="selAngle" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+            <option value="87" data-file="1">87° (③-1収録)</option>
+            <option value="85" data-file="1">85° (③-1収録)</option>
+            <option value="75" data-file="1">75° (③-1収録)</option>
+            <option value="65" data-file="2">65° (③-2収録)</option>
           </select>
         </div>
 
-        <!-- 2. 主ジブ角度 & SLウエイト半径 -->
-        <div class="grid grid-cols-2 gap-2" id="angleRadiusContainer">
-          <div>
-            <label class="block text-[11px] font-medium text-slate-300 mb-1">主ジブ角度</label>
-            <select id="selAngle" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
-              <option value="87°">87°</option>
-              <option value="85°">85°</option>
-              <option value="75°">75°</option>
-              <option value="65°">65°</option>
-            </select>
-          </div>
+        <!-- 2. SL半径 & 主ブーム長 -->
+        <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-[11px] font-medium text-slate-300 mb-1">SL半径</label>
             <select id="selRadius" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
-              <option value="24m">24m</option>
-              <option value="21m">21m</option>
-              <option value="18m">18m</option>
-              <option value="15m">15m</option>
+              <option value="24">24m</option>
+              <option value="21">21m</option>
+              <option value="18">18m</option>
+              <option value="15">15m</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-300 mb-1">主ジブ長さ</label>
+            <select id="selMainBoom" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="48">48m</option>
+              <option value="54">54m</option>
+              <option value="60">60m</option>
+              <option value="66">66m</option>
+              <option value="72">72m</option>
+              <option value="78">78m</option>
+              <option value="84">84m</option>
+              <option value="90">90m</option>
+              <option value="96">96m</option>
+              <option value="102">102m</option>
+              <option value="108">108m</option>
             </select>
           </div>
         </div>
 
-        <!-- 3. 主ジブ長さ & 補ジブ長さ -->
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-[11px] font-medium text-slate-300 mb-1">主ジブ長さ</label>
-            <select id="selMainBoom" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500"></select>
-          </div>
-          <div id="jibLengthContainer">
-            <label class="block text-[11px] font-medium text-slate-300 mb-1">補ジブ長さ</label>
-            <select id="selJib" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500"></select>
-          </div>
+        <!-- 3. 補ジブ長さ -->
+        <div>
+          <label class="block text-[11px] font-medium text-slate-300 mb-1">補ジブ長さ (ラフィング)</label>
+          <select id="selJib" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+            <option value="24">24m</option>
+            <option value="30">30m</option>
+            <option value="36">36m</option>
+            <option value="42">42m</option>
+            <option value="48">48m</option>
+            <option value="54">54m</option>
+            <option value="60">60m</option>
+            <option value="66">66m</option>
+            <option value="72">72m</option>
+            <option value="78">78m</option>
+            <option value="84">84m</option>
+            <option value="90">90m</option>
+            <option value="96">96m</option>
+            <option value="102">102m</option>
+            <option value="108">108m</option>
+          </select>
         </div>
 
-        <!-- ダイレクトジャンプボタン -->
+        <!-- ジャンプボタン -->
         <button id="directJumpBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded text-xs flex items-center justify-center gap-1.5 transition-colors shadow">
-          <i data-lucide="zap" class="w-4 h-4"></i> 該当する荷重表を開く
+          <i data-lucide="zap" class="w-4 h-4"></i> 該当する荷重表ページを開く
         </button>
       </div>
 
-      <!-- 目次ヘッダー & 検索窓 -->
+      <!-- 目次検索 & ツリー -->
       <div class="p-2 border-b border-slate-800 bg-slate-950/40">
         <div class="relative">
-          <input type="text" id="outlineSearch" placeholder="目次内フリーワード検索..." class="w-full bg-slate-950 border border-slate-700 text-slate-200 placeholder-slate-500 rounded px-2.5 py-1.5 pl-8 text-xs focus:outline-none focus:border-amber-500">
+          <input type="text" id="outlineSearch" placeholder="目次フリーワード検索..." class="w-full bg-slate-950 border border-slate-700 text-slate-200 placeholder-slate-500 rounded px-2.5 py-1.5 pl-8 text-xs focus:outline-none focus:border-amber-500">
           <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5"></i>
         </div>
       </div>
 
-      <!-- PDF内のしおり一覧 -->
       <div class="flex-1 overflow-y-auto p-2 space-y-1" id="outlineContainer">
-        <div class="text-xs text-slate-500 p-4 text-center">
-          PDFを選択すると、ここに目次・しおりが反映されます。
-        </div>
+        <div class="text-xs text-slate-500 p-4 text-center">しおりを読み込み中...</div>
       </div>
 
-      <div class="p-2.5 bg-slate-950/80 border-t border-slate-800 text-[11px] flex items-center justify-between text-slate-400">
-        <span>現在の選択ページ:</span>
-        <span id="targetPageInfo" class="font-tech text-amber-400 font-bold">P. 1</span>
+      <!-- 手動ファイル切替フッター -->
+      <div class="p-2 bg-slate-950/90 border-t border-slate-800 text-[11px] flex items-center justify-between">
+        <span class="text-slate-400">対象ファイル手動切替:</span>
+        <div class="flex gap-1">
+          <button id="btnSwitchFile1" class="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold text-[10px]">③-1</button>
+          <button id="btnSwitchFile2" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white font-bold text-[10px]">③-2</button>
+        </div>
       </div>
     </aside>
 
     <!-- PDF描画エリア -->
     <main class="flex-1 overflow-auto bg-slate-950 relative" id="pdfViewerArea">
-      <div id="dropPrompt" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-6 text-center z-10">
-        <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-lg shadow-amber-500/5">
-          <i data-lucide="file-text" class="w-8 h-8"></i>
-        </div>
-        <h2 class="text-lg font-bold text-white mb-2">CC6800荷重表.pdf を選択してください</h2>
-        <p class="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
-          原本PDFを選択すると、「主ジブ長さ」「補ジブ長さ」「SL半径」「角度」の組み合わせから目的のページへ一発ジャンプできます。
-        </p>
-        <label class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-2.5 rounded-lg text-sm flex items-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20 transition-all transform active:scale-95">
-          <i data-lucide="upload" class="w-4 h-4"></i>
-          <span>PDFファイルを選択する</span>
-          <input type="file" id="mainFilePicker" accept=".pdf" class="hidden">
-        </label>
-      </div>
-
-      <div id="pdfCanvasContainer" class="hidden">
+      <div id="pdfCanvasContainer">
         <canvas id="pdfCanvas"></canvas>
       </div>
     </main>
@@ -186,158 +192,85 @@
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+    // 2つのファイル名
+    const FILE_MAP = {
+      1: "③-1_0335-2375.pdf",
+      2: "③-2_2376-4310.pdf"
+    };
+
+    let currentFileKey = 1;
     let pdfDoc = null;
     let pageNum = 1;
     let pageRendering = false;
     let pageNumPending = null;
     let scale = 1.35;
-    
-    // PDFから読み込んだ全しおり
     let rawBookmarks = [];
-
-    // CC6800 各仕様の規格寸法データ
-    const SPEC_DATA = {
-      SWSL: {
-        booms: [48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108],
-        jibs: [24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108],
-        angles: ['87°', '85°', '75°', '65°'],
-        radiuses: ['24m', '21m', '18m', '15m'],
-        hasJib: true, hasAngle: true, hasRadius: true
-      },
-      SSL: {
-        booms: [42, 48, 54, 60, 66, 72, 78, 84, 90, 96],
-        jibs: [],
-        angles: [],
-        radiuses: ['24m', '21m', '18m', '15m'],
-        hasJib: false, hasAngle: false, hasRadius: true
-      },
-      'SSL/LSL': {
-        booms: [102, 108, 114, 120, 126, 132, 138, 144, 150],
-        jibs: [],
-        angles: [],
-        radiuses: ['24m', '21m'],
-        hasJib: false, hasAngle: false, hasRadius: true
-      },
-      SH: {
-        booms: [36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96],
-        jibs: [], angles: [], radiuses: [],
-        hasJib: false, hasAngle: false, hasRadius: false
-      },
-      LH: {
-        booms: [42, 48, 54, 60, 66, 72, 78, 84, 90],
-        jibs: [], angles: [], radiuses: [],
-        hasJib: false, hasAngle: false, hasRadius: false
-      },
-      'SH/LH': {
-        booms: [48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108],
-        jibs: [], angles: [], radiuses: [],
-        hasJib: false, hasAngle: false, hasRadius: false
-      }
-    };
 
     const canvas = document.getElementById('pdfCanvas');
     const ctx = canvas.getContext('2d');
 
-    // UI初期化・連動
-    function updateDropdowns() {
-      const type = document.getElementById('selType').value;
-      const spec = SPEC_DATA[type] || SPEC_DATA['SWSL'];
+    // 角度変更時にファイルバッジを連動更新
+    document.getElementById('selAngle').addEventListener('change', (e) => {
+      const selected = e.target.options[e.target.selectedIndex];
+      const targetFile = selected.dataset.file;
+      document.getElementById('fileTargetTag').innerText = `ファイル: ③-${targetFile}`;
+    });
 
-      // 主ジブ長さの更新
-      const selMain = document.getElementById('selMainBoom');
-      selMain.innerHTML = spec.booms.map(b => `<option value="${b}m">${b}m</option>`).join('');
+    // 手動ファイル切替ボタン
+    document.getElementById('btnSwitchFile1').addEventListener('click', () => switchPdfFile(1, 1));
+    document.getElementById('btnSwitchFile2').addEventListener('click', () => switchPdfFile(2, 1));
 
-      // 補ジブ長さ
-      const jibContainer = document.getElementById('jibLengthContainer');
-      const selJib = document.getElementById('selJib');
-      if (spec.hasJib) {
-        jibContainer.style.display = 'block';
-        selJib.innerHTML = spec.jibs.map(j => `<option value="${j}m">${j}m</option>`).join('');
+    function updateFileButtonStyles() {
+      const btn1 = document.getElementById('btnSwitchFile1');
+      const btn2 = document.getElementById('btnSwitchFile2');
+      const badge = document.getElementById('activeFileBadge');
+
+      if (currentFileKey === 1) {
+        btn1.className = "px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold text-[10px]";
+        btn2.className = "px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white font-bold text-[10px]";
+        badge.innerText = "③-1 (87°/85°/75°)";
       } else {
-        jibContainer.style.display = 'none';
-      }
-
-      // 角度と半径の表示切替
-      document.getElementById('angleRadiusContainer').style.display = (spec.hasAngle || spec.hasRadius) ? 'grid' : 'none';
-      
-      const selAngle = document.getElementById('selAngle');
-      selAngle.disabled = !spec.hasAngle;
-      if (!spec.hasAngle) selAngle.innerHTML = '<option value="">-</option>';
-      else selAngle.innerHTML = spec.angles.map(a => `<option value="${a}">${a}</option>`).join('');
-
-      const selRadius = document.getElementById('selRadius');
-      selRadius.disabled = !spec.hasRadius;
-      if (!spec.hasRadius) selRadius.innerHTML = '<option value="">-</option>';
-      else selRadius.innerHTML = spec.radiuses.map(r => `<option value="${r}">${r}</option>`).join('');
-    }
-
-    document.getElementById('selType').addEventListener('change', updateDropdowns);
-    updateDropdowns();
-
-    function renderPage(num) {
-      pageRendering = true;
-      pdfDoc.getPage(num).then(function(page) {
-        const viewport = page.getViewport({ scale: scale });
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        const renderContext = { canvasContext: ctx, viewport: viewport };
-        const renderTask = page.render(renderContext);
-
-        renderTask.promise.then(function() {
-          pageRendering = false;
-          if (pageNumPending !== null) {
-            renderPage(pageNumPending);
-            pageNumPending = null;
-          }
-        });
-      });
-      document.getElementById('pageInput').value = num;
-      document.getElementById('targetPageInfo').innerText = `P. ${num}`;
-      highlightActiveBookmark(num);
-    }
-
-    function queueRenderPage(num) {
-      if (pageRendering) {
-        pageNumPending = num;
-      } else {
-        renderPage(num);
+        btn2.className = "px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold text-[10px]";
+        btn1.className = "px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white font-bold text-[10px]";
+        badge.innerText = "③-2 (65°)";
       }
     }
 
-    function goToPage(num) {
-      if (!pdfDoc) return;
-      const p = Math.max(1, Math.min(pdfDoc.numPages, parseInt(num) || 1));
-      pageNum = p;
-      queueRenderPage(pageNum);
-    }
+    // PDFファイルのロード・切り替え
+    async function switchPdfFile(fileKey, targetPage = 1) {
+      if (currentFileKey === fileKey && pdfDoc) {
+        goToPage(targetPage);
+        return;
+      }
 
-    // PDF読み込み
-    function loadPdfFile(file) {
-      const fileReader = new FileReader();
-      fileReader.onload = async function() {
-        const typedarray = new Uint8Array(this.result);
-        try {
-          pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
-          document.getElementById('pageTotal').innerText = `/ ${pdfDoc.numPages}`;
-          document.getElementById('pageInput').max = pdfDoc.numPages;
-          document.getElementById('dropPrompt').classList.add('hidden');
-          document.getElementById('pdfCanvasContainer').classList.remove('hidden');
+      currentFileKey = fileKey;
+      updateFileButtonStyles();
+      document.getElementById('outlineContainer').innerHTML = 
+        `<div class="text-xs text-slate-400 p-4 text-center">③-${fileKey} を読み込み中...</div>`;
 
-          // PDF内のしおりをフラットに抽出
-          const outline = await pdfDoc.getOutline();
-          rawBookmarks = [];
-          if (outline) {
-            await extractFlatBookmarks(outline);
-            renderBookmarkList(rawBookmarks);
-          }
+      try {
+        const loadingTask = pdfjsLib.getDocument(FILE_MAP[fileKey]);
+        pdfDoc = await loadingTask.promise;
+        document.getElementById('pageTotal').innerText = `/ ${pdfDoc.numPages}`;
+        document.getElementById('pageInput').max = pdfDoc.numPages;
 
-          renderPage(1);
-        } catch (err) {
-          alert('PDFの読み込みまたは解析に失敗しました: ' + err.message);
+        // しおりの取得
+        const outline = await pdfDoc.getOutline();
+        rawBookmarks = [];
+        if (outline) {
+          await extractFlatBookmarks(outline);
+          renderBookmarkList(rawBookmarks);
+        } else {
+          document.getElementById('outlineContainer').innerHTML = 
+            '<div class="text-xs text-slate-500 p-4 text-center">しおり情報がありません</div>';
         }
-      };
-      fileReader.readAsArrayBuffer(file);
+
+        goToPage(targetPage);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('outlineContainer').innerHTML = 
+          `<div class="text-xs text-rose-400 p-4 text-center">PDF (${FILE_MAP[fileKey]}) の読み込みに失敗しました。<br>同一フォルダにファイルが配置されているかご確認ください。</div>`;
+      }
     }
 
     async function extractFlatBookmarks(items) {
@@ -371,7 +304,7 @@
       container.innerHTML = '';
 
       if (list.length === 0) {
-        container.innerHTML = '<div class="text-xs text-slate-500 p-4 text-center">しおりが見つかりません。</div>';
+        container.innerHTML = '<div class="text-xs text-slate-500 p-4 text-center">該当するしおりがありません。</div>';
         return;
       }
 
@@ -397,85 +330,92 @@
       container.appendChild(frag);
     }
 
-    // 目次フリーワード検索
+    function renderPage(num) {
+      pageRendering = true;
+      pdfDoc.getPage(num).then(function(page) {
+        const viewport = page.getViewport({ scale: scale });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const renderContext = { canvasContext: ctx, viewport: viewport };
+        const renderTask = page.render(renderContext);
+
+        renderTask.promise.then(function() {
+          pageRendering = false;
+          if (pageNumPending !== null) {
+            renderPage(pageNumPending);
+            pageNumPending = null;
+          }
+        });
+      });
+      document.getElementById('pageInput').value = num;
+      highlightActiveBookmark(num);
+    }
+
+    function queueRenderPage(num) {
+      if (pageRendering) {
+        pageNumPending = num;
+      } else {
+        renderPage(num);
+      }
+    }
+
+    function goToPage(num) {
+      if (!pdfDoc) return;
+      const p = Math.max(1, Math.min(pdfDoc.numPages, parseInt(num) || 1));
+      pageNum = p;
+      queueRenderPage(pageNum);
+    }
+
+    // ダイレクトジャンプ判定ロジック
+    document.getElementById('directJumpBtn').addEventListener('click', async () => {
+      const angle = document.getElementById('selAngle').value;
+      const radius = document.getElementById('selRadius').value;
+      const mainBoom = parseInt(document.getElementById('selMainBoom').value);
+      const jib = parseInt(document.getElementById('selJib').value);
+
+      // 65度は ③-2、それ以外(87°, 85°, 75°)は ③-1
+      const targetFileKey = (angle === '65') ? 2 : 1;
+
+      // 必要ならファイルを切り替える
+      if (currentFileKey !== targetFileKey) {
+        await switchPdfFile(targetFileKey, 1);
+      }
+
+      // しおりから最もマッチする大見出しを検索
+      const searchTag = `SWSL${angle}°_SL半径${radius}m`;
+      let matchedBm = rawBookmarks.find(b => b.title.replace(/\s+/g, '').includes(searchTag));
+
+      if (!matchedBm) {
+        matchedBm = rawBookmarks.find(b => b.title.includes(`${angle}°`) && b.title.includes(`${radius}m`));
+      }
+
+      if (matchedBm) {
+        // ブーム長・ジブ長に応じた相対オフセット計算
+        const booms = [48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108];
+        const jibs = [24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108];
+
+        const bIdx = Math.max(0, booms.indexOf(mainBoom));
+        const jIdx = Math.max(0, jibs.indexOf(jib));
+        const targetOffset = (bIdx * 15) + jIdx;
+
+        const calculatedPage = Math.min(pdfDoc.numPages, matchedBm.page + targetOffset);
+        goToPage(calculatedPage);
+
+        if (window.innerWidth < 768) {
+          document.getElementById('sidebar').classList.add('-translate-x-full');
+        }
+      } else {
+        alert(`該当する角度(${angle}°)・半径(${radius}m)のセクションが見つかりませんでした。`);
+      }
+    });
+
+    // 検索窓フィルター
     document.getElementById('outlineSearch').addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase().trim();
       const filtered = rawBookmarks.filter(b => b.title.toLowerCase().includes(q));
       renderBookmarkList(filtered);
     });
-
-    // 「該当する荷重表を開く」ボタン（高精度マッチングアルゴリズム）
-    document.getElementById('directJumpBtn').addEventListener('click', () => {
-      const type = document.getElementById('selType').value;
-      const angle = document.getElementById('selAngle').value;
-      const radius = document.getElementById('selRadius').value;
-      const mainBoom = document.getElementById('selMainBoom').value;
-      const jib = document.getElementById('selJib').value;
-
-      // 1. SH / LH / SH/LH 仕様のダイレクトマップ
-      if (type === 'SH') {
-        const shMap = { '36m':2, '42m':3, '48m':4, '54m':5, '60m':6, '66m':7, '72m':8, '78m':9, '84m':10, '90m':11, '96m':12 };
-        if (shMap[mainBoom]) { goToPage(shMap[mainBoom]); closeMobileSidebar(); return; }
-      } else if (type === 'LH') {
-        const lhMap = { '42m':24, '48m':25, '54m':26, '60m':27, '66m':28, '72m':29, '78m':30, '84m':31, '90m':32 };
-        if (lhMap[mainBoom]) { goToPage(lhMap[mainBoom]); closeMobileSidebar(); return; }
-      } else if (type === 'SH/LH') {
-        const shLhMap = { '48m':13, '54m':14, '60m':15, '66m':16, '72m':17, '78m':18, '84m':19, '90m':20, '96m':21, '102m':22, '108m':23 };
-        if (shLhMap[mainBoom]) { goToPage(shLhMap[mainBoom]); closeMobileSidebar(); return; }
-      }
-
-      // 2. SSL / SSL/LSL 仕様のダイレクトマップ
-      if (type === 'SSL' && radius === '24m') {
-        const sslMap = { '42m':34, '48m':35, '54m':36, '60m':37, '66m':38, '72m':39, '78m':40, '84m':41, '90m':42, '96m':43 };
-        if (sslMap[mainBoom]) { goToPage(sslMap[mainBoom]); closeMobileSidebar(); return; }
-      } else if (type === 'SSL/LSL' && radius === '24m') {
-        const lslMap = { '102m':114, '108m':115, '114m':116, '120m':117, '126m':118, '132m':119, '138m':120, '144m':121, '150m':122 };
-        if (lslMap[mainBoom]) { goToPage(lslMap[mainBoom]); closeMobileSidebar(); return; }
-      }
-
-      // 3. SWSL仕様（しおりのセクション開始位置からオフセット計算またはしおり内検索）
-      // SWSLの大見出ししおり（例: SWSL87°_SL半径15m など）を探す
-      let bestBookmark = null;
-      let targetSectionTitle = `${type}${angle}_SL半径${radius}`;
-      
-      // 完全一致する大見出しを探す
-      let parentBm = rawBookmarks.find(b => b.title.replace(/\s+/g, '').includes(targetSectionTitle));
-      if (!parentBm) {
-        // 部分一致
-        parentBm = rawBookmarks.find(b => b.title.includes(type) && b.title.includes(angle) && b.title.includes(radius));
-      }
-
-      if (parentBm) {
-        // ブーム長・ジブ長に応じたページオフセットを特定
-        const mVal = parseInt(mainBoom) || 48;
-        const jVal = parseInt(jib) || 24;
-        
-        // 1つの主ブーム長あたり約12〜15種類のジブ長さ表が存在（1ページあたり1〜2表）
-        const boomIndex = SPEC_DATA.SWSL.booms.indexOf(mVal);
-        const jibIndex = SPEC_DATA.SWSL.jibs.indexOf(jVal);
-
-        if (boomIndex !== -1 && jibIndex !== -1) {
-          // 各セクションの開始ページからの相対オフセットを算出
-          const pageOffset = (boomIndex * 15) + Math.floor(jibIndex * 1.0);
-          const estimatedPage = parentBm.page + pageOffset;
-          goToPage(estimatedPage);
-          closeMobileSidebar();
-          return;
-        }
-
-        goToPage(parentBm.page);
-        closeMobileSidebar();
-        return;
-      }
-
-      alert('該当するセクションが見つかりませんでした。条件を変えてお試しください。');
-    });
-
-    function closeMobileSidebar() {
-      if (window.innerWidth < 768) {
-        document.getElementById('sidebar').classList.add('-translate-x-full');
-      }
-    }
 
     function highlightActiveBookmark(currentPage) {
       document.querySelectorAll('.outline-item').forEach(el => {
@@ -487,14 +427,12 @@
       });
     }
 
-    // イベント設定
-    document.getElementById('filePicker').addEventListener('change', (e) => loadPdfFile(e.target.files[0]));
-    document.getElementById('mainFilePicker').addEventListener('change', (e) => loadPdfFile(e.target.files[0]));
-
+    // ページ送りボタン
     document.getElementById('prevPageBtn').addEventListener('click', () => { if (pageNum > 1) goToPage(pageNum - 1); });
     document.getElementById('nextPageBtn').addEventListener('click', () => { if (pdfDoc && pageNum < pdfDoc.numPages) goToPage(pageNum + 1); });
     document.getElementById('pageInput').addEventListener('change', (e) => goToPage(e.target.value));
 
+    // ズーム
     document.getElementById('zoomInBtn').addEventListener('click', () => {
       scale = Math.min(3.0, scale + 0.2);
       document.getElementById('zoomLevel').innerText = Math.round((scale / 1.35) * 100) + '%';
@@ -506,6 +444,7 @@
       if (pdfDoc) queueRenderPage(pageNum);
     });
 
+    // サイドバー開閉
     document.getElementById('toggleSidebarBtn').addEventListener('click', () => {
       document.getElementById('sidebar').classList.toggle('-translate-x-full');
     });
@@ -514,6 +453,9 @@
     });
 
     lucide.createIcons();
+
+    // 初回読み込み（③-1からスタート）
+    switchPdfFile(1, 1);
   </script>
 </body>
 </html>
