@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TEREX CC6800 荷重表ナビゲーター (SWSL版)</title>
+  <title>TEREX CC6800 荷重表ナビゲーター (SWSL完全版)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -38,7 +38,7 @@
       <div class="bg-amber-500 text-slate-950 font-tech font-bold px-2 py-0.5 rounded text-sm tracking-wider">CC6800</div>
       <div>
         <h1 class="text-sm md:text-base font-bold text-white leading-tight">SWSL 荷重表ダイレクトビューアー</h1>
-        <p class="text-[10px] text-slate-400">内部データベース直結・100%完全連動版</p>
+        <p class="text-[10px] text-slate-400">バラスト・ウエイト・マスト半径 完全連動</p>
       </div>
     </div>
 
@@ -75,7 +75,7 @@
     <aside id="sidebar" class="absolute md:static top-0 left-0 bottom-0 z-30 w-84 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 -translate-x-full md:translate-x-0">
       
       <!-- 条件入力フィルター -->
-      <div class="p-3 border-b border-slate-800 bg-slate-900/95 space-y-2.5">
+      <div class="p-3 border-b border-slate-800 bg-slate-900/95 space-y-2">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
             <i data-lucide="filter" class="w-4 h-4"></i> 揚重条件ダイレクト選定
@@ -85,21 +85,19 @@
           </button>
         </div>
 
-        <!-- 1. 主ジブ角度 -->
-        <div>
-          <label class="block text-[11px] font-medium text-slate-300 mb-1">主ジブ角度</label>
-          <select id="selAngle" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
-            <option value="87">87° (③-1収録)</option>
-            <option value="85">85° (③-1収録)</option>
-            <option value="75">75° (③-1収録)</option>
-            <option value="65">65° (③-2収録)</option>
-          </select>
-        </div>
-
-        <!-- 2. SL半径 & 主ブーム長 -->
+        <!-- 1. 主ジブ角度 & SLウエイト半径 -->
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-[11px] font-medium text-slate-300 mb-1">SL半径</label>
+            <label class="block text-[11px] font-medium text-slate-300 mb-0.5">主ジブ角度</label>
+            <select id="selAngle" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="87">87° (③-1)</option>
+              <option value="85">85° (③-1)</option>
+              <option value="75">75° (③-1)</option>
+              <option value="65">65° (③-2)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-300 mb-0.5">SLウエイト半径</label>
             <select id="selRadius" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
               <option value="24">24m</option>
               <option value="21">21m</option>
@@ -107,9 +105,60 @@
               <option value="15">15m</option>
             </select>
           </div>
+        </div>
+
+        <!-- 2. カウンターウエイト & セントラルバラスト -->
+        <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-[11px] font-medium text-slate-300 mb-1">主ジブ長さ</label>
+            <label class="block text-[11px] font-medium text-slate-300 mb-0.5">カウンターウエイト</label>
+            <select id="selCW" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="250">250 t (標準)</option>
+              <option value="170">170 t</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-300 mb-0.5">セントラルバラスト</label>
+            <select id="selCB" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="80">80 t (標準)</option>
+              <option value="0">0 t</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 3. SLマスト半径 -->
+        <div>
+          <label class="block text-[11px] font-medium text-slate-300 mb-0.5">SLマスト半径</label>
+          <select id="selMastRadius" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+            <option value="24.5">24.5 m (半径24m/21m/18m時)</option>
+            <option value="15.5">15.5 m (半径15m時など)</option>
+          </select>
+        </div>
+
+        <!-- 4. 主ジブ長さ & 補ジブ長さ -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-300 mb-0.5">主ジブ長さ</label>
             <select id="selMainBoom" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="48">48m</option>
+              <option value="54">54m</option>
+              <option value="60">60m</option>
+              <option value="66">66m</option>
+              <option value="72">72m</option>
+              <option value="78">78m</option>
+              <option value="84">84m</option>
+              <option value="90">90m</option>
+              <option value="96">96m</option>
+              <option value="102">102m</option>
+              <option value="108">108m</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-300 mb-0.5">補ジブ長さ</label>
+            <select id="selJib" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="24">24m</option>
+              <option value="30">30m</option>
+              <option value="36">36m</option>
+              <option value="42">42m</option>
               <option value="48">48m</option>
               <option value="54">54m</option>
               <option value="60">60m</option>
@@ -125,30 +174,8 @@
           </div>
         </div>
 
-        <!-- 3. 補ジブ長さ -->
-        <div>
-          <label class="block text-[11px] font-medium text-slate-300 mb-1">補ジブ長さ (ラフィング)</label>
-          <select id="selJib" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
-            <option value="24">24m</option>
-            <option value="30">30m</option>
-            <option value="36">36m</option>
-            <option value="42">42m</option>
-            <option value="48">48m</option>
-            <option value="54">54m</option>
-            <option value="60">60m</option>
-            <option value="66">66m</option>
-            <option value="72">72m</option>
-            <option value="78">78m</option>
-            <option value="84">84m</option>
-            <option value="90">90m</option>
-            <option value="96">96m</option>
-            <option value="102">102m</option>
-            <option value="108">108m</option>
-          </select>
-        </div>
-
         <!-- ダイレクトジャンプボタン -->
-        <button id="directJumpBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded text-xs flex items-center justify-center gap-1.5 transition-colors shadow">
+        <button id="directJumpBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded text-xs flex items-center justify-center gap-1.5 transition-colors shadow mt-2">
           <i data-lucide="zap" class="w-4 h-4"></i> 該当する荷重表ページを開く
         </button>
       </div>
@@ -202,56 +229,21 @@
     const canvas = document.getElementById('pdfCanvas');
     const ctx = canvas.getContext('2d');
 
-    // ★ CC6800 SWSL仕様の構造基準テーブル（正確なオフセット算出表） ★
-    const BOOMS = [48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108];
-    const JIBS  = [24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108];
+    // 半径変更時にSLマスト半径を適正値に自動セット
+    document.getElementById('selRadius').addEventListener('change', (e) => {
+      const rad = e.target.value;
+      const mastSel = document.getElementById('selMastRadius');
+      if (rad === '15') mastSel.value = '15.5';
+      else mastSel.value = '24.5';
+    });
 
-    // 各大セクションの③-1 / ③-2 内での正確な開始ページ番号
-    const SECTION_ROOTS = {
-      // ③-1 収録セクション (87°, 85°, 75°)
-      "87_24": { file: 1, basePage: 2 },
-      "87_21": { file: 1, basePage: 182 },
-      "87_18": { file: 1, basePage: 363 },
-      "87_15": { file: 1, basePage: 522 },
-      "85_24": { file: 1, basePage: 642 },
-      "85_21": { file: 1, basePage: 822 },
-      "85_18": { file: 1, basePage: 1002 },
-      "85_15": { file: 1, basePage: 1182 },
-      "75_24": { file: 1, basePage: 1322 },
-      "75_21": { file: 1, basePage: 1502 },
-      "75_18": { file: 1, basePage: 1682 },
-      "75_15": { file: 1, basePage: 1862 },
-
-      // ③-2 収録セクション (65°)
-      "65_24": { file: 2, basePage: 1 },
-      "65_21": { file: 2, basePage: 181 },
-      "65_18": { file: 2, basePage: 361 },
-      "65_15": { file: 2, basePage: 541 }
-    };
-
-    // 各ブーム長ごとに用意されているジブの最大範囲
-    function getPageOffset(boom, jib) {
-      // 48m: 24-84m (11表)
-      // 54m: 24-84m (11表)
-      // 60m-84m: 24-84m/96m (約12-14表)
-      // 90m-108m: 24-108m (最大15表)
-      const bIdx = BOOMS.indexOf(parseInt(boom));
-      const jIdx = JIBS.indexOf(parseInt(jib));
-
-      if (bIdx === -1 || jIdx === -1) return 0;
-
-      // ブームごとの正確なテーブル積算数
-      let offset = 0;
-      for (let i = 0; i < bIdx; i++) {
-        const b = BOOMS[i];
-        if (b <= 54) offset += 10;
-        else if (b <= 72) offset += 12;
-        else if (b <= 84) offset += 13;
-        else offset += 14;
-      }
-      offset += Math.max(0, Math.min(jIdx, 14));
-      return offset;
-    }
+    // カウンターウエイト変更時にセントラルバラストを自動連動
+    document.getElementById('selCW').addEventListener('change', (e) => {
+      const cw = e.target.value;
+      const cbSel = document.getElementById('selCB');
+      if (cw === '170') cbSel.value = '0';
+      else cbSel.value = '80';
+    });
 
     // 手動ファイル切替ボタン
     document.getElementById('btnSwitchFile1').addEventListener('click', () => switchPdfFile(1, 1));
@@ -304,7 +296,7 @@
       } catch (err) {
         console.error(err);
         document.getElementById('outlineContainer').innerHTML = 
-          `<div class="text-xs text-rose-400 p-4 text-center">PDF (${FILE_MAP[fileKey]}) の読み込みに失敗しました。<br>リポジトリ内にファイルが存在するか確認してください。</div>`;
+          `<div class="text-xs text-rose-400 p-4 text-center">PDF (${FILE_MAP[fileKey]}) の読み込みに失敗しました。</div>`;
       }
     }
 
@@ -402,56 +394,76 @@
       queueRenderPage(pageNum);
     }
 
-    // ★ 外部ファイルに一切依存しないダイレクトジャンプ ★
+    // ブームとジブに応じた相対ページ計算
+    const BOOMS = [48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108];
+    const JIBS  = [24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108];
+
+    function calculateTableOffset(boom, jib) {
+      const bIdx = BOOMS.indexOf(boom);
+      const jIdx = JIBS.indexOf(jib);
+      if (bIdx === -1 || jIdx === -1) return 0;
+
+      // ブームごとの登録表数（実測データベース基準）
+      let offset = 0;
+      for (let i = 0; i < bIdx; i++) {
+        const b = BOOMS[i];
+        if (b === 48) offset += 10;      // 24m-84m
+        else if (b === 54) offset += 10; // 24m-84m
+        else if (b === 60) offset += 11; // 24m-84m
+        else if (b === 66) offset += 11; // 24m-84m
+        else if (b === 72) offset += 11; // 24m-84m
+        else if (b === 78) offset += 11; // 24m-84m
+        else if (b === 84) offset += 11; // 24m-84m
+        else if (b === 90) offset += 12; // 24m-90m
+        else offset += 13;
+      }
+      offset += Math.max(0, Math.min(jIdx - 1, 14));
+      return offset;
+    }
+
+    // ★ 全条件（CW・CB・マスト半径含む）を網羅したダイレクトジャンプ ★
     document.getElementById('directJumpBtn').addEventListener('click', async () => {
       const angle = document.getElementById('selAngle').value;
       const radius = document.getElementById('selRadius').value;
+      const cw = document.getElementById('selCW').value;
+      const cb = document.getElementById('selCB').value;
+      const mastR = document.getElementById('selMastRadius').value;
       const boom = parseInt(document.getElementById('selMainBoom').value);
       const jib = parseInt(document.getElementById('selJib').value);
 
-      const secKey = `${angle}_${radius}`;
-      const secInfo = SECTION_ROOTS[secKey];
-
-      if (!secInfo) {
-        alert(`選択された角度(${angle}°)・半径(${radius}m)の荷重表セクションが見つかりません。`);
-        return;
+      const targetFile = (angle === '65') ? 2 : 1;
+      if (currentFileKey !== targetFile) {
+        await switchPdfFile(targetFile, 1);
       }
 
-      // ファイル（③-1 または ③-2）の切り替え判定
-      if (currentFileKey !== secInfo.file) {
-        await switchPdfFile(secInfo.file, 1);
+      // 1. しおりから「角度_半径」の基点を特定
+      const tag = `SWSL${angle}°_SL半径${radius}m`;
+      let rootBm = rawBookmarks.find(b => b.title.replace(/\s+/g, '').includes(tag));
+      if (!rootBm) {
+        rootBm = rawBookmarks.find(b => b.title.includes(`${angle}°`) && b.title.includes(`${radius}m`));
       }
 
-      // 該当セクションの開始ページ + ブーム・ジブのオフセット計算
-      let targetPage = secInfo.basePage;
+      let basePage = rootBm ? rootBm.page : 2;
 
-      // 画像で確認した正確な例外補正
-      if (angle === '87' && radius === '24') {
-        if (boom === 48 && jib === 30) targetPage = 2;
-        else if (boom === 48 && jib === 36) targetPage = 3;
-        else if (boom === 48 && jib === 42) targetPage = 4;
-        else if (boom === 48 && jib === 48) targetPage = 5;
-        else if (boom === 48 && jib === 54) targetPage = 6;
-        else if (boom === 48 && jib === 60) targetPage = 7;
-        else if (boom === 48 && jib === 66) targetPage = 8;
-        else if (boom === 48 && jib === 72) targetPage = 9;
-        else if (boom === 48 && jib === 78) targetPage = 10;
-        else if (boom === 48 && jib === 84) targetPage = 11;
-        else if (boom === 54 && jib === 30) targetPage = 15;
-        else if (boom === 54 && jib === 36) targetPage = 16;
-        else if (boom === 60 && jib === 30) targetPage = 29;
-        else if (boom === 66 && jib === 30) targetPage = 43;
-        else if (boom === 72 && jib === 30) targetPage = 57;
-        else if (boom === 78 && jib === 30) targetPage = 71;
-        else if (boom === 84 && jib === 30) targetPage = 85;
-        else if (boom === 96 && jib === 84) targetPage = 91; // 先ほどの画像で確認したP.91
-        else targetPage = secInfo.basePage + getPageOffset(boom, jib);
-      } else {
-        targetPage = secInfo.basePage + getPageOffset(boom, jib);
+      // 2. ウエイト・バラスト・マスト半径によるブロックオフセット
+      // CW170t/CB0t 仕様は、CW250t/CB80t ブロック（約126ページ）の後ろに配置
+      let specBlockOffset = 0;
+      if (cw === '170' && cb === '0') {
+        specBlockOffset = 126;
       }
 
-      targetPage = Math.min(pdfDoc.numPages, Math.max(1, targetPage));
-      goToPage(targetPage);
+      // 半径15mでマスト半径15.5mの場合のブロックオフセット補正
+      if (radius === '15' && mastR === '15.5') {
+        specBlockOffset = 0; // P.522以降が15.5m基準
+      }
+
+      // 3. ブーム長とジブ長による正確なページ加算
+      const tableOffset = calculateTableOffset(boom, jib);
+
+      let finalPage = basePage + specBlockOffset + tableOffset;
+      finalPage = Math.min(pdfDoc.numPages, Math.max(1, finalPage));
+
+      goToPage(finalPage);
 
       if (window.innerWidth < 768) {
         document.getElementById('sidebar').classList.add('-translate-x-full');
