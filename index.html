@@ -38,7 +38,7 @@
       <div class="bg-amber-500 text-slate-950 font-tech font-bold px-2 py-0.5 rounded text-sm tracking-wider">CC6800</div>
       <div>
         <h1 class="text-sm md:text-base font-bold text-white leading-tight">定格総荷重表スマートナビゲーター</h1>
-        <p class="text-[10px] text-slate-400">TEREX DEMAG GmbH • 条件選択ダイレクトジャンプ</p>
+        <p class="text-[10px] text-slate-400">TEREX DEMAG GmbH • 揚重計画ダイレクト選定</p>
       </div>
     </div>
 
@@ -72,7 +72,7 @@
   <!-- メインエリア -->
   <div class="flex flex-1 overflow-hidden relative">
     
-    <!-- 左側サイドバー（条件選択 ＆ しおりパネル） -->
+    <!-- 左側サイドバー（条件入力 ＆ しおりパネル） -->
     <aside id="sidebar" class="absolute md:static top-0 left-0 bottom-0 z-30 w-84 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-300 -translate-x-full md:translate-x-0">
       
       <!-- 条件入力フィルターエリア -->
@@ -86,11 +86,18 @@
           </button>
         </div>
 
-        <!-- 1. 基本仕様 -->
+        <!-- 1. 仕様選択 -->
         <div>
           <label class="block text-[11px] font-medium text-slate-300 mb-1">仕様 / アタッチメント</label>
           <select id="selType" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
-            <option value="">全仕様から検索</option>
+            <option value="SWSL">SWSL (スーパーリフト+起伏ジブ)</option>
+            <option value="SSL">SSL (スーパーリフト主ジブ 42〜96m)</option>
+            <option value="SSL/LSL">SSL/LSL (SL主ジブ 102〜150m)</option>
+            <option value="SH">SH (主ジブ 36〜96m)</option>
+            <option value="LH">LH (主ジブ 42〜90m)</option>
+            <option value="SH/LH">SH/LH (主ジブ 48〜108m)</option>
+            <option value="SW">SW (起伏ジブ)</option>
+            <option value="LFVL">LFVL (スーパーリフト固定ジブ)</option>
           </select>
         </div>
 
@@ -99,12 +106,20 @@
           <div>
             <label class="block text-[11px] font-medium text-slate-300 mb-1">主ジブ角度</label>
             <select id="selAngle" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="87°">87°</option>
+              <option value="85°">85°</option>
+              <option value="75°">75°</option>
+              <option value="65°">65°</option>
               <option value="">指定なし</option>
             </select>
           </div>
           <div>
             <label class="block text-[11px] font-medium text-slate-300 mb-1">SL半径</label>
             <select id="selRadius" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+              <option value="24m">24m</option>
+              <option value="21m">21m</option>
+              <option value="18m">18m</option>
+              <option value="15m">15m</option>
               <option value="">指定なし</option>
             </select>
           </div>
@@ -116,12 +131,14 @@
             <label class="block text-[11px] font-medium text-slate-300 mb-1">主ジブ長さ</label>
             <select id="selMainBoom" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
               <option value="">指定なし</option>
+              <!-- 48m〜108m 等が動的または固定で入る -->
             </select>
           </div>
           <div>
             <label class="block text-[11px] font-medium text-slate-300 mb-1">補ジブ長さ</label>
             <select id="selJib" class="w-full bg-slate-950 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500">
               <option value="">指定なし</option>
+              <!-- 24m〜108m 等が入る -->
             </select>
           </div>
         </div>
@@ -147,8 +164,8 @@
       </div>
 
       <div class="p-2.5 bg-slate-950/80 border-t border-slate-800 text-[11px] flex items-center justify-between text-slate-400">
-        <span>解析完了しおり数:</span>
-        <span id="parsedCount" class="font-tech text-amber-400 font-bold">0 件</span>
+        <span>ヒット件数:</span>
+        <span id="matchCount" class="font-tech text-amber-400 font-bold">0 件</span>
       </div>
     </aside>
 
@@ -187,8 +204,25 @@
     // 解析した全しおりデータベース
     let bookmarkDatabase = [];
 
+    // CC6800の標準規格長リスト
+    const STANDARD_MAIN_BOOMS = [36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108, 114, 120, 126, 132, 138, 144, 150];
+    const STANDARD_JIBS = [24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108];
+
     const canvas = document.getElementById('pdfCanvas');
     const ctx = canvas.getContext('2d');
+
+    // 初期状態で長さ選択肢を設定
+    function initStandardOptions() {
+      const selMain = document.getElementById('selMainBoom');
+      const selJib = document.getElementById('selJib');
+      
+      selMain.innerHTML = '<option value="">指定なし</option>' + 
+        STANDARD_MAIN_BOOMS.map(b => `<option value="${b}m">${b}m</option>`).join('');
+      
+      selJib.innerHTML = '<option value="">指定なし</option>' + 
+        STANDARD_JIBS.map(j => `<option value="${j}m">${j}m</option>`).join('');
+    }
+    initStandardOptions();
 
     function renderPage(num) {
       pageRendering = true;
@@ -244,9 +278,10 @@
           bookmarkDatabase = [];
           if (outline) {
             await parseOutlineTree(outline);
-            populateDropdownFilters();
-            renderBookmarkList(bookmarkDatabase);
-            document.getElementById('parsedCount').innerText = `${bookmarkDatabase.length} 件`;
+            // 実際にPDFに存在する長さリストで再構築
+            populateExtractedOptions();
+            const list = filterBookmarks();
+            renderBookmarkList(list);
           }
 
           renderPage(1);
@@ -257,7 +292,7 @@
       fileReader.readAsArrayBuffer(file);
     }
 
-    // しおりの再帰解析（タイトルから条件を自動抽出）
+    // しおりの階層ツリー解析（親階層の仕様・角度・半径を子階層へ引き継ぎ）
     async function parseOutlineTree(items, parentContext = {}) {
       for (const item of items) {
         let title = item.title.trim();
@@ -274,46 +309,51 @@
           }
         }
 
-        // 親の階層情報を引き継ぎ
         let context = { ...parentContext };
 
-        // 形式判定 (SH, LH, SSL, SWSL, LF etc.)
+        // 1. 仕様判定
         if (title.includes('SWSL')) context.type = 'SWSL';
         else if (title.includes('SSL/LSL')) context.type = 'SSL/LSL';
         else if (title.includes('SSL')) context.type = 'SSL';
         else if (title.includes('SH/LH')) context.type = 'SH/LH';
         else if (title.includes('SH')) context.type = 'SH';
         else if (title.includes('LH')) context.type = 'LH';
+        else if (title.includes('SW')) context.type = 'SW';
         else if (title.includes('LFVL') || title.includes('LF')) context.type = 'LFVL';
 
-        // 角度判定 (87°, 85°, 75°, 65° 等)
+        // 2. 角度判定 (87°, 85°, 75°, 65° 等)
         const angleMatch = title.match(/(\d{2})[°度]/);
         if (angleMatch) context.angle = angleMatch[1] + '°';
 
-        // SL半径判定 (24m, 21m, 18m, 15m 等)
+        // 3. 半径判定 (24m, 21m, 18m, 15m 等)
         const radiusMatch = title.match(/SL[^\d]*(\d{1,2})m/i) || title.match(/半径[^\d]*(\d{1,2})m/);
         if (radiusMatch) context.radius = radiusMatch[1] + 'm';
 
-        // 主ジブ長さ / 補ジブ長さ判定
-        // 例: "主ジブ60m", "補ジブ48m", "60m + 48m", "60m"
-        const mainMatch = title.match(/主(?:ジブ)?[^\d]*(\d{2,3})m/) || title.match(/^(\d{2,3})m/);
-        if (mainMatch) context.mainBoom = mainMatch[1] + 'm';
+        // 4. 主ジブ長さ・補ジブ長さ判定（柔軟な正規表現）
+        // パターンA: "主ジブ60m" や "主 60m"
+        const mainExplicit = title.match(/主(?:ジブ)?[^\d]*(\d{2,3})m/);
+        if (mainExplicit) context.mainBoom = mainExplicit[1] + 'm';
 
-        const jibMatch = title.match(/補(?:ジブ)?[^\d]*(\d{2,3})m/) || title.match(/\+\s*(\d{2,3})m/);
-        if (jibMatch) context.jib = jibMatch[1] + 'm';
+        // パターンB: "補ジブ48m" や "ジブ48m" や "+ 48m"
+        const jibExplicit = title.match(/(?:補|ラフィング)?ジブ[^\d]*(\d{2,3})m/) || title.match(/\+\s*(\d{2,3})m/);
+        if (jibExplicit) context.jib = jibExplicit[1] + 'm';
 
-        // 単純な数値＋m の組み合わせがある場合
-        const multiM = title.match(/(\d{2,3})m[^\d]+(\d{2,3})m/);
-        if (multiM) {
-          context.mainBoom = multiM[1] + 'm';
-          context.jib = multiM[2] + 'm';
+        // パターンC: "60m + 48m" や "60m / 48m" などの併記
+        const comboMatch = title.match(/(\d{2,3})m\s*[\+\/_\-]\s*(\d{2,3})m/);
+        if (comboMatch) {
+          context.mainBoom = comboMatch[1] + 'm';
+          context.jib = comboMatch[2] + 'm';
+        } else if (!context.mainBoom) {
+          // パターンD: 単独の "60m" 表記
+          const singleM = title.match(/^(\d{2,3})m$/) || title.match(/^(\d{2,3})m\b/);
+          if (singleM) context.mainBoom = singleM[1] + 'm';
         }
 
         if (targetPage) {
           bookmarkDatabase.push({
             title: title,
             page: targetPage,
-            type: context.type || 'その他',
+            type: context.type || '',
             angle: context.angle || '',
             radius: context.radius || '',
             mainBoom: context.mainBoom || '',
@@ -327,25 +367,44 @@
       }
     }
 
-    // 抽出された条件からドロップダウンの選択肢を生成
-    function populateDropdownFilters() {
-      const types = [...new Set(bookmarkDatabase.map(b => b.type).filter(Boolean))];
-      const angles = [...new Set(bookmarkDatabase.map(b => b.angle).filter(Boolean))].sort((a,b) => parseInt(b)-parseInt(a));
-      const radiuses = [...new Set(bookmarkDatabase.map(b => b.radius).filter(Boolean))].sort((a,b) => parseInt(b)-parseInt(a));
-      const mainBooms = [...new Set(bookmarkDatabase.map(b => b.mainBoom).filter(Boolean))].sort((a,b) => parseInt(a)-parseInt(b));
-      const jibs = [...new Set(bookmarkDatabase.map(b => b.jib).filter(Boolean))].sort((a,b) => parseInt(a)-parseInt(b));
+    // 抽出された実際のリストをドロップダウンへ反映
+    function populateExtractedOptions() {
+      const extractedMain = [...new Set(bookmarkDatabase.map(b => b.mainBoom).filter(Boolean))]
+        .sort((a,b) => parseInt(a)-parseInt(b));
+      const extractedJib = [...new Set(bookmarkDatabase.map(b => b.jib).filter(Boolean))]
+        .sort((a,b) => parseInt(a)-parseInt(b));
 
-      fillSelect('selType', types, '全仕様から検索');
-      fillSelect('selAngle', angles, '指定なし');
-      fillSelect('selRadius', radiuses, '指定なし');
-      fillSelect('selMainBoom', mainBooms, '指定なし');
-      fillSelect('selJib', jibs, '指定なし');
+      if (extractedMain.length > 0) {
+        document.getElementById('selMainBoom').innerHTML = '<option value="">指定なし</option>' + 
+          extractedMain.map(b => `<option value="${b}">${b}</option>`).join('');
+      }
+      if (extractedJib.length > 0) {
+        document.getElementById('selJib').innerHTML = '<option value="">指定なし</option>' + 
+          extractedJib.map(j => `<option value="${j}">${j}</option>`).join('');
+      }
     }
 
-    function fillSelect(elementId, items, defaultText) {
-      const sel = document.getElementById(elementId);
-      sel.innerHTML = `<option value="">${defaultText}</option>` + 
-        items.map(item => `<option value="${item}">${item}</option>`).join('');
+    // フィルタリング処理（部分一致・階層考慮）
+    function filterBookmarks() {
+      const t = document.getElementById('selType').value;
+      const a = document.getElementById('selAngle').value;
+      const r = document.getElementById('selRadius').value;
+      const m = document.getElementById('selMainBoom').value;
+      const j = document.getElementById('selJib').value;
+      const q = document.getElementById('outlineSearch').value.toLowerCase().trim();
+
+      const filtered = bookmarkDatabase.filter(b => {
+        if (t && b.type && b.type !== t) return false;
+        if (a && b.angle && b.angle !== a) return false;
+        if (r && b.radius && b.radius !== r) return false;
+        if (m && b.mainBoom && b.mainBoom !== m) return false;
+        if (j && b.jib && b.jib !== j) return false;
+        if (q && !b.title.toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      document.getElementById('matchCount').innerText = `${filtered.length} 件`;
+      return filtered;
     }
 
     // しおり一覧の描画
@@ -354,12 +413,15 @@
       container.innerHTML = '';
 
       if (list.length === 0) {
-        container.innerHTML = '<div class="text-xs text-slate-500 p-4 text-center">条件に一致する荷重表が見つかりません。</div>';
+        container.innerHTML = '<div class="text-xs text-slate-500 p-4 text-center">条件に一致する荷重表が見つかりません。<br>条件を「指定なし」にしてお試しください。</div>';
         return;
       }
 
+      // 上位100件を表示して快適性を維持
+      const showList = list.slice(0, 100);
       const frag = document.createDocumentFragment();
-      list.forEach(item => {
+
+      showList.forEach(item => {
         const btn = document.createElement('div');
         btn.className = "outline-item group flex items-center justify-between px-2.5 py-1.5 rounded bg-slate-950/40 hover:bg-slate-800 border border-slate-800/80 hover:border-amber-500/50 cursor-pointer text-xs transition-colors";
         btn.dataset.page = item.page;
@@ -368,8 +430,8 @@
           <div class="truncate pr-2">
             <span class="font-medium text-slate-200 group-hover:text-amber-400">${item.title}</span>
             <div class="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
-              ${item.type ? `<span class="bg-slate-800 px-1 py-0.2 rounded">${item.type}</span>` : ''}
-              ${item.angle ? `<span>${item.angle}</span>` : ''}
+              ${item.type ? `<span class="bg-slate-800 px-1 py-0.2 rounded text-slate-400">${item.type}</span>` : ''}
+              ${item.angle ? `<span class="text-amber-400/80">${item.angle}</span>` : ''}
               ${item.radius ? `<span>${item.radius}</span>` : ''}
               ${item.mainBoom ? `<span>主:${item.mainBoom}</span>` : ''}
               ${item.jib ? `<span>補:${item.jib}</span>` : ''}
@@ -389,40 +451,18 @@
       container.appendChild(frag);
     }
 
-    // 条件選択によるリアルタイム絞り込み & ダイレクトジャンプ
-    function filterBookmarks() {
-      const t = document.getElementById('selType').value;
-      const a = document.getElementById('selAngle').value;
-      const r = document.getElementById('selRadius').value;
-      const m = document.getElementById('selMainBoom').value;
-      const j = document.getElementById('selJib').value;
-      const q = document.getElementById('outlineSearch').value.toLowerCase().trim();
-
-      return bookmarkDatabase.filter(b => {
-        if (t && b.type !== t) return false;
-        if (a && b.angle !== a) return false;
-        if (r && b.radius !== r) return false;
-        if (m && b.mainBoom !== m) return false;
-        if (j && b.jib !== j) return false;
-        if (q && !b.title.toLowerCase().includes(q)) return false;
-        return true;
-      });
-    }
-
-    // フィルター操作時に一覧を自動更新
+    // ドロップダウン変更時に再検索
     ['selType', 'selAngle', 'selRadius', 'selMainBoom', 'selJib'].forEach(id => {
       document.getElementById(id).addEventListener('change', () => {
-        const filtered = filterBookmarks();
-        renderBookmarkList(filtered);
+        renderBookmarkList(filterBookmarks());
       });
     });
 
     document.getElementById('outlineSearch').addEventListener('input', () => {
-      const filtered = filterBookmarks();
-      renderBookmarkList(filtered);
+      renderBookmarkList(filterBookmarks());
     });
 
-    // 「該当する荷重表を開く」ボタンで先頭の一致ページへ直接ジャンプ
+    // 「該当する荷重表を開く」ボタン（最上位一致ページへジャンプ）
     document.getElementById('directJumpBtn').addEventListener('click', () => {
       const filtered = filterBookmarks();
       if (filtered.length > 0) {
@@ -431,7 +471,7 @@
           document.getElementById('sidebar').classList.add('-translate-x-full');
         }
       } else {
-        alert('選択された条件に一致するページが見つかりませんでした。条件を少し緩めてお試しください。');
+        alert('条件に一致するページが見つかりませんでした。「指定なし」に戻してお試しください。');
       }
     });
 
