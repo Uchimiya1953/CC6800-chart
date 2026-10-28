@@ -20,20 +20,22 @@
       <div class="bg-amber-500 text-slate-950 font-tech font-bold px-2 py-0.5 rounded text-sm tracking-wider">CC6800</div>
       <div>
         <h1 class="text-sm md:text-base font-bold text-white leading-tight">定格総荷重表ナビゲーター</h1>
-        <p class="text-[10px] text-slate-400">TEREX DEMAG GmbH • 全4,823ページ対応 (Google Cloud連携版)</p>
+        <p class="text-[10px] text-slate-400">TEREX DEMAG GmbH • 全4,823ページ対応原本ビューアー</p>
       </div>
     </div>
 
-    <!-- ページ直接入力 & サイドバートグル -->
+    <!-- 検索案内バッジ & サイドバートグル -->
     <div class="flex items-center gap-2">
-      <div class="flex items-center bg-slate-800 rounded border border-slate-700 px-2 py-1">
-        <span class="text-xs text-slate-400 mr-1.5 font-medium">現在ページ:</span>
-        <input type="number" id="pageInput" min="1" max="4823" value="1" class="w-14 bg-slate-900 text-center font-tech text-amber-400 text-sm font-bold border border-slate-700 rounded py-0.5 focus:outline-none focus:border-amber-500">
-        <span class="text-xs text-slate-400 font-tech ml-1">/ 4,823</span>
-        <button id="jumpPageBtn" class="ml-2 bg-amber-500 hover:bg-amber-400 text-slate-950 px-2 py-0.5 rounded text-xs font-bold transition-colors">移動</button>
+      <div class="hidden sm:flex items-center bg-slate-800 rounded border border-slate-700 px-3 py-1">
+        <span class="text-xs text-slate-400 mr-2">目的ページ目安:</span>
+        <span id="targetPageBadge" class="font-tech text-amber-400 text-base font-bold">P. 1</span>
       </div>
-      <button id="toggleSidebarBtn" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-1.5 rounded border border-slate-700 font-bold flex items-center gap-1 text-xs md:hidden">
-        <i data-lucide="sliders" class="w-4 h-4"></i>
+      <a id="directOpenBtn" href="https://drive.google.com/file/d/1gwacjRnWaEx30MlsI99Uas_ZZiF4G2I1/view" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1 rounded text-xs flex items-center gap-1 font-medium transition-colors">
+        <i data-lucide="external-link" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span class="hidden md:inline">別タブで開く</span>
+      </a>
+      <button id="toggleSidebarBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 p-1.5 rounded font-bold flex items-center gap-1 text-xs md:hidden">
+        <i data-lucide="search" class="w-4 h-4"></i>
       </button>
     </div>
   </header>
@@ -46,7 +48,7 @@
       <div class="p-4 border-b border-slate-800">
         <div class="flex items-center justify-between mb-3">
           <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
-            <i data-lucide="filter" class="w-3.5 h-3.5"></i> 仕様から絞り込みジャンプ
+            <i data-lucide="sliders" class="w-3.5 h-3.5"></i> 仕様からページ逆引き
           </span>
           <button id="closeSidebarBtn" class="text-slate-400 hover:text-white md:hidden">
             <i data-lucide="x" class="w-4 h-4"></i>
@@ -79,8 +81,8 @@
           </div>
         </div>
 
-        <button id="jumpPresetBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded text-xs flex items-center justify-center gap-1.5 transition-colors shadow">
-          <i data-lucide="external-link" class="w-4 h-4"></i> 該当する荷重表ページを開く
+        <button id="calcPageBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded text-xs flex items-center justify-center gap-1.5 transition-colors shadow">
+          <i data-lucide="compass" class="w-4 h-4"></i> 該当ページ番号を確認
         </button>
       </div>
 
@@ -89,47 +91,61 @@
         <div class="text-[11px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider">主要セクション代表ページ</div>
       </div>
 
-      <!-- 下部ステータス -->
+      <!-- 下部ガイド -->
       <div class="p-3 bg-slate-950/70 border-t border-slate-800 text-[11px] text-slate-400">
-        <div class="flex items-center justify-between mb-1">
-          <span>ストレージ:</span>
-          <span class="text-emerald-400 font-medium">Google Drive連携中</span>
-        </div>
-        <p class="text-[10px] text-slate-500">※右上の拡大ボタンや印刷ボタンからPDF原本の操作が可能です。</p>
+        <p class="leading-relaxed">
+          💡 右側のビューアー上部にある<strong class="text-amber-400">「ページ番号入力枠」</strong>に目的の数字を入れると、エラーを起こさず直接ジャンプできます。
+        </p>
       </div>
     </aside>
 
-    <!-- Google Drive PDFビューアー表示エリア -->
+    <!-- PDF表示エリア -->
     <main class="flex-1 bg-slate-900 flex flex-col relative overflow-hidden">
+      <!-- ページナビゲーション通知バー -->
+      <div id="navBar" class="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-amber-400 font-bold flex items-center gap-1">
+            <i data-lucide="info" class="w-4 h-4"></i> 案内:
+          </span>
+          <span id="navGuideText" class="text-slate-200">
+            右側ビューアーのページ欄に「<strong class="text-amber-400 font-tech text-sm">1</strong>」と入力して移動してください
+          </span>
+        </div>
+        <button id="copyPageBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1">
+          <i data-lucide="copy" class="w-3 h-3"></i> ページ番号をコピー
+        </button>
+      </div>
+
+      <!-- 安定表示用 iframe -->
       <iframe 
         id="pdfIframe"
-        class="w-full h-full border-0 bg-slate-800"
-        src=""
+        class="w-full h-full border-0 bg-slate-950"
+        src="https://drive.google.com/file/d/1gwacjRnWaEx30MlsI99Uas_ZZiF4G2I1/preview"
         allow="autoplay">
       </iframe>
     </main>
   </div>
 
   <script>
-    // ==========================================
-    // ★ ここにGoogleドライブのファイルIDを入力してください ★
-    // ==========================================
-    const GOOGLE_DRIVE_FILE_ID = "1gwacjRnWaEx30MlsI99Uas_ZZiF4G2I1";
+    let currentTargetPage = 1;
 
-    let currentPage = 1;
-
-    // 代表インデックス
+    // 代表インデックスデータ
     const INDEX_DATA = [
       { title: "作業範囲図 (SH / LH)", page: 1 },
       { title: "SH 36m (定格総荷重表)", page: 2 },
+      { title: "SH 42m (定格総荷重表)", page: 3 },
       { title: "SH 48m (定格総荷重表)", page: 4 },
+      { title: "SH 60m (定格総荷重表)", page: 6 },
       { title: "SH 84m (定格総荷重表)", page: 10 },
+      { title: "SH 96m (定格総荷重表)", page: 12 },
       { title: "SH/LH 48m", page: 13 },
       { title: "LH 42m (定格総荷重表)", page: 24 },
+      { title: "LH 60m (定格総荷重表)", page: 27 },
       { title: "SSL / SSL-LSL 作業範囲図", page: 33 },
       { title: "SSL 42m (SL半径 24m)", page: 34 },
       { title: "SSL 60m (SL半径 24m)", page: 37 },
       { title: "SSL 84m (SL半径 24m)", page: 41 },
+      { title: "SSL 96m (SL半径 24m)", page: 43 },
       { title: "SSL/LSL 102m (SL半径 24m)", page: 114 },
       { title: "SSL/LSL 120m (SL半径 24m)", page: 117 },
       { title: "SSL/LSL 150m (SL半径 24m)", page: 122 },
@@ -142,27 +158,31 @@
       { title: "SWSL 主ブーム108m + 起伏ジブ", page: 2600 }
     ];
 
-    function updatePdfUrl(page) {
-      currentPage = Math.max(1, Math.min(4823, parseInt(page) || 1));
-      document.getElementById('pageInput').value = currentPage;
+    function setTargetPage(page, title = "") {
+      currentTargetPage = page;
+      document.getElementById('targetPageBadge').innerText = `P. ${page}`;
       
-      const iframe = document.getElementById('pdfIframe');
-      // Google Drive ビューアーURL（#page=指定で直接該当ページを開く）
-      iframe.src = `https://drive.google.com/file/d/${GOOGLE_DRIVE_FILE_ID}/preview#page=${currentPage}`;
+      const label = title ? `【${title}】` : '';
+      document.getElementById('navGuideText').innerHTML = 
+        `${label} 右側ビューアーのページ枠に「<strong class="text-amber-400 font-tech text-base mx-1">${page}</strong>」を入力してください`;
+
+      if (window.innerWidth < 768) {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+      }
     }
 
-    // 初期読み込み
-    updatePdfUrl(1);
-
-    // ページ指定移動
-    document.getElementById('jumpPageBtn').addEventListener('click', () => {
-      updatePdfUrl(document.getElementById('pageInput').value);
+    // ページ番号コピー
+    document.getElementById('copyPageBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(currentTargetPage.toString()).then(() => {
+        const btn = document.getElementById('copyPageBtn');
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i> コピー完了!`;
+        lucide.createIcons();
+        setTimeout(() => { btn.innerHTML = orig; lucide.createIcons(); }, 1500);
+      });
     });
-    document.getElementById('pageInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') updatePdfUrl(e.target.value);
-    });
 
-    // 仕様選択の連動
+    // 選択肢の更新
     const boomSelect = document.getElementById('boomLength');
     const jibSelect = document.getElementById('jibLength');
     const configSelect = document.getElementById('configType');
@@ -185,45 +205,48 @@
     configSelect.addEventListener('change', updateOptions);
     updateOptions();
 
-    // 絞り込みボタンのジャンプ処理
-    document.getElementById('jumpPresetBtn').addEventListener('click', () => {
+    // 絞り込みボタンの計算処理
+    document.getElementById('calcPageBtn').addEventListener('click', () => {
       const type = configSelect.value;
       const boom = parseInt(boomSelect.value);
-      
+      let page = 1;
+      let title = "";
+
       if (type === 'SH') {
         const shMap = { 36:2, 42:3, 48:4, 54:5, 60:6, 66:7, 72:8, 78:9, 84:10, 90:11, 96:12 };
-        if (shMap[boom]) updatePdfUrl(shMap[boom]);
+        page = shMap[boom] || 2;
+        title = `SH仕様 ${boom}m`;
       } else if (type === 'LH') {
         const lhMap = { 42:24, 48:25, 54:26, 60:27, 66:28, 72:29, 78:30, 84:31, 90:32 };
-        if (lhMap[boom]) updatePdfUrl(lhMap[boom]);
+        page = lhMap[boom] || 24;
+        title = `LH仕様 ${boom}m`;
+      } else if (type === 'SH_LH') {
+        page = 13;
+        title = `SH/LH仕様 ${boom}m`;
       } else if (type === 'SSL') {
         const sslMap = { 42:34, 48:35, 54:36, 60:37, 66:38, 72:39, 78:40, 84:41, 90:42, 96:43 };
-        if (sslMap[boom]) updatePdfUrl(sslMap[boom]);
+        page = sslMap[boom] || 34;
+        title = `SSL仕様 ${boom}m`;
       } else if (type === 'SSL_LSL') {
         const lslMap = { 102:114, 108:115, 114:116, 120:117, 126:118, 132:119, 138:120, 144:121, 150:122 };
-        if (lslMap[boom]) updatePdfUrl(lslMap[boom]);
+        page = lslMap[boom] || 114;
+        title = `SSL/LSL仕様 ${boom}m`;
       } else if (type.startsWith('SWSL')) {
         const swslMap = { 48:180, 54:250, 60:320, 66:480, 72:650, 78:850, 84:1100, 90:1450, 96:1800, 102:2200, 108:2600 };
-        if (swslMap[boom]) updatePdfUrl(swslMap[boom]);
+        page = swslMap[boom] || 180;
+        title = `SWSL仕様 ブーム${boom}m+ジブ${jibSelect.value}m`;
       }
-      
-      if (window.innerWidth < 768) {
-        document.getElementById('sidebar').classList.add('-translate-x-full');
-      }
+
+      setTargetPage(page, title);
     });
 
-    // クイックインデックスリスト生成
+    // クイックインデックスボタン生成
     const quickList = document.getElementById('quickIndexList');
     INDEX_DATA.forEach(item => {
       const btn = document.createElement('button');
       btn.className = "w-full text-left px-2.5 py-1.5 rounded bg-slate-950/60 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/50 text-xs transition-colors flex items-center justify-between";
       btn.innerHTML = `<span class="truncate text-slate-300">${item.title}</span><span class="font-tech text-amber-400 font-bold ml-2">P.${item.page}</span>`;
-      btn.onclick = () => {
-        updatePdfUrl(item.page);
-        if (window.innerWidth < 768) {
-          document.getElementById('sidebar').classList.add('-translate-x-full');
-        }
-      };
+      btn.onclick = () => setTargetPage(item.page, item.title);
       quickList.appendChild(btn);
     });
 
