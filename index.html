@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TEREX DEMAG CC6800-1 揚重計画＆定格総荷重表 PWA</title>
+  
+  <!-- PWA & Mobile Web App Meta -->
+  <meta name="theme-color" content="#0b0f19">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CC6800 Pro">
+  <meta name="description" content="TEREX DEMAG CC6800-1 (1,250t) クローラクレーン 定格総荷重表＆揚重計画シミュレーター">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans JP"', '"Inter"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            demag: {
+              red: '#E11D48',
+              orange: '#F97316',
+              amber: '#EAB308',
+              yellow: '#FACC15',
+              dark: '#0B0F19',
+              card: '#131A2B',
+              hover: '#1D273E',
+              border: '#24324D',
+              borderLight: '#334466'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0B0F19; }
+    ::-webkit-scrollbar-thumb { background: #24324D; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3B82F6; }
+
+    /* Number inputs */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] { -moz-appearance: textfield; }
+
+    /* Print / PDF Styling */
+    @media print {
+      body { background: #ffffff !important; color: #000000 !important; font-size: 11px !important; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      .panel-card { border: 1px solid #777 !important; background: transparent !important; box-shadow: none !important; color: #000 !important; }
+      th, td { border: 1px solid #444 !important; color: #000 !important; }
+      th { background: #eee !important; }
+      .text-slate-400, .text-slate-500, .text-slate-300 { color: #333 !important; }
+    }
+    .print-only { display: none; }
+  </style>
+</head>
+
+<body class="bg-demag-dark text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-amber-400 selection:text-slate-950">
+
+  <!-- ================= TOP APP BAR ================= -->
+  <header class="sticky top-0 z-40 bg-[#0E1524]/95 border-b border-demag-border backdrop-blur-md">
+    <div class="max-w-[1720px] mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+      
+      <!-- Brand & Crane Tag -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-600 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-orange-500/20 shrink-0">
+          <i data-lucide="tower-control" class="w-6 h-6 stroke-[2.2]"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-amber-400/10 text-amber-400 border border-amber-400/30 tracking-wider">
+              1,250t 超大型クローラー
+            </span>
+            <span class="text-xs font-mono text-slate-400 font-semibold hidden sm:inline">TEREX DEMAG</span>
+          </div>
+          <h1 class="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-1.5">
+            CC6800-1 <span class="text-xs sm:text-sm font-semibold text-slate-300 font-sans">定格総荷重＆揚重シミュレーター</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 no-print">
+        <!-- Preset Selector -->
+        <div class="relative hidden xl:block">
+          <select id="preset-select" onchange="loadPreset(this.value)" class="bg-demag-card text-xs font-semibold text-amber-300 border border-demag-border rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:border-amber-400">
+            <option value="">⚡ 実務プリセット読込...</option>
+            <option value="wind">風力発電ナセル揚重 (SSL/LSL 138m / 72t)</option>
+            <option value="plant">超重量プラント容器 (SSL 60m / 350t)</option>
+            <option value="standard">汎用高所建方 (SH/LH 84m / 45t)</option>
+            <option value="heavy">超重荷重至近作業 (SH 36m / 550t)</option>
+          </select>
+        </div>
+
+        <!-- GitHub Deploy Modal Trigger -->
+        <button onclick="toggleDeployModal(true)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-xs font-bold text-sky-300 transition">
+          <i data-lucide="github" class="w-4 h-4"></i>
+          <span>GitHub公開手順</span>
+        </button>
+
+        <button onclick="copyLiftingPlan()" title="計画内容をコピー" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-demag-card hover:bg-demag-hover border border-demag-border text-xs font-semibold text-slate-200 transition">
+          <i data-lucide="copy" class="w-4 h-4 text-amber-400"></i>
+          <span class="hidden sm:inline">計画コピー</span>
+        </button>
+
+        <button onclick="exportTableToCSV()" title="CSV出力" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-demag-card hover:bg-demag-hover border border-demag-border text-xs font-semibold text-slate-200 transition">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+          <span class="hidden sm:inline">CSV</span>
+        </button>
+
+        <button onclick="window.print()" title="印刷 / PDF保存" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow-md shadow-amber-400/20 transition font-mono">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          <span>印刷/PDF</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Specification Selector Bar -->
+    <div class="max-w-[1720px] mx-auto px-2 sm:px-6 flex overflow-x-auto border-t border-demag-border no-print text-xs font-bold divide-x divide-demag-border/50">
+      <button onclick="setSpec('SH')" id="nav-SH" class="spec-tab py-2.5 px-4 text-slate-400 hover:text-white transition flex items-center gap-2 shrink-0 border-b-2 border-transparent">
+        <i data-lucide="shield" class="w-4 h-4"></i>
+        <span>SH 仕様 <span class="text-[10px] font-normal text-slate-500 font-mono">(標準主ジブ 36〜96m)</span></span>
+      </button>
+      <button onclick="setSpec('SH/LH')" id="nav-SH/LH" class="spec-tab py-2.5 px-4 text-slate-400 hover:text-white transition flex items-center gap-2 shrink-0 border-b-2 border-transparent">
+        <i data-lucide="git-merge" class="w-4 h-4"></i>
+        <span>SH/LH 仕様 <span class="text-[10px] font-normal text-slate-500 font-mono">(複合主ジブ 48〜108m)</span></span>
+      </button>
+      <button onclick="setSpec('LH')" id="nav-LH" class="spec-tab py-2.5 px-4 text-slate-400 hover:text-white transition flex items-center gap-2 shrink-0 border-b-2 border-transparent">
+        <i data-lucide="feather" class="w-4 h-4"></i>
+        <span>LH 仕様 <span class="text-[10px] font-normal text-slate-500 font-mono">(軽量主ジブ 42〜90m)</span></span>
+      </button>
+      <button onclick="setSpec('SSL')" id="nav-SSL" class="spec-tab py-2.5 px-4 text-amber-400 border-b-2 border-amber-400 transition flex items-center gap-2 shrink-0">
+        <i data-lucide="zap" class="w-4 h-4"></i>
+        <span>SSL 仕様 <span class="text-[10px] font-normal text-amber-300/80 font-mono">(スーパーリフト 42〜96m)</span></span>
+      </button>
+      <button onclick="setSpec('SSL/LSL')" id="nav-SSL/LSL" class="spec-tab py-2.5 px-4 text-slate-400 hover:text-white transition flex items-center gap-2 shrink-0 border-b-2 border-transparent">
+        <i data-lucide="expand" class="w-4 h-4"></i>
+        <span>SSL/LSL 仕様 <span class="text-[10px] font-normal text-slate-500 font-mono">(超長尺SL 102〜150m)</span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= PRINT COVER HEADER (Print Only) ================= -->
+  <div class="print-only p-4 border-b border-black mb-4">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-xl font-bold">TEREX DEMAG CC6800-1 揚重計画書兼定格総荷重表</h1>
+        <p class="text-xs text-gray-600">CC6800 Web Application Plan Export</p>
+      </div>
+      <div class="text-right text-xs">
+        <p class="font-bold">最大吊上能力: 1,250t / 10m</p>
+        <p id="print-ds-code" class="font-mono">DS-CODE: ---</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN DASHBOARD ================= -->
+  <main class="flex-1 max-w-[1720px] w-full mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+    <!-- LEFT COLUMN: Configurations & Interactive Lifting Simulator (5 cols) -->
+    <div class="lg:col-span-5 flex flex-col gap-4">
+
+      <!-- Configuration Card -->
+      <div class="bg-demag-card border border-demag-border rounded-xl p-4 sm:p-5 shadow-lg panel-card">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-demag-border">
+          <div class="flex items-center gap-2">
+            <i data-lucide="settings-2" class="w-4 h-4 text-amber-400"></i>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-200">機体組立仕様・バラスト設定</h2>
+          </div>
+          <span id="badge-spec-code" class="font-mono text-xs font-bold px-2.5 py-0.5 rounded bg-demag-hover text-amber-300 border border-demag-borderLight">
+            SSL 60m / SL24m / 250t
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+          <!-- Boom Length Selection -->
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1 flex items-center justify-between">
+              <span>主ジブ長さ (Boom)</span>
+              <span id="boom-length-badge" class="text-amber-400 font-mono">60 m</span>
+            </label>
+            <select id="select-boom-length" onchange="updateCraneConfig()" class="w-full bg-[#090E17] border border-demag-border focus:border-amber-400 rounded-lg p-2.5 text-sm text-white font-mono focus:outline-none">
+            </select>
+          </div>
+
+          <!-- SL Radius Selection -->
+          <div id="wrapper-sl-radius">
+            <label class="block font-semibold text-slate-300 mb-1">SL 半径 (Superlift Radius)</label>
+            <select id="select-sl-radius" onchange="updateCraneConfig()" class="w-full bg-[#090E17] border border-demag-border focus:border-amber-400 rounded-lg p-2.5 text-sm text-white font-mono focus:outline-none">
+              <option value="24" selected>24.0 m (標準マスト)</option>
+              <option value="21">21.0 m</option>
+              <option value="15">15.0 m (狭隘地)</option>
+            </select>
+          </div>
+
+          <!-- SL Counterweight -->
+          <div id="wrapper-sl-cw">
+            <label class="block font-semibold text-slate-300 mb-1 flex items-center justify-between">
+              <span>SL カウンターウエイト</span>
+              <span id="sl-cw-badge" class="text-orange-400 font-mono">250 t</span>
+            </label>
+            <select id="select-sl-cw" onchange="updateCraneConfig()" class="w-full bg-[#090E17] border border-demag-border focus:border-amber-400 rounded-lg p-2.5 text-sm text-white font-mono focus:outline-none">
+              <option value="450">450 t (最大ウエイト)</option>
+              <option value="350">350 t</option>
+              <option value="250" selected>250 t (常用)</option>
+              <option value="150">150 t</option>
+              <option value="50">50 t</option>
+              <option value="0">0 t (SLマストのみ)</option>
+            </select>
+          </div>
+
+          <!-- Basic Machine Counterweight -->
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">機体旋回体 / 車体ウエイト</label>
+            <select id="select-crane-cw" onchange="updateCraneConfig()" class="w-full bg-[#090E17] border border-demag-border focus:border-amber-400 rounded-lg p-2.5 text-sm text-white font-mono focus:outline-none">
+              <option value="250-80" selected>旋回 250t / 車体 80t (標準)</option>
+              <option value="210-80">旋回 210t / 車体 80t</option>
+              <option value="170-0">旋回 170t / 車体 0t</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Note info bar -->
+        <div class="mt-3 pt-2.5 border-t border-demag-border/60 flex items-center justify-between text-[11px] text-slate-400">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>クレーン総重量: <b id="total-crane-weight" class="text-slate-200 font-mono">約 1,020 t</b></span>
+          </span>
+          <span class="font-mono text-emerald-400 flex items-center gap-1">
+            <i data-lucide="wind" class="w-3.5 h-3.5"></i> 許容風速: 9.8 m/s
+          </span>
+        </div>
+      </div>
+
+      <!-- Simulator & Safety Rate Card -->
+      <div class="bg-demag-card border border-demag-border rounded-xl p-4 sm:p-5 shadow-xl panel-card relative overflow-hidden">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-demag-border">
+          <div class="flex items-center gap-2">
+            <i data-lucide="calculator" class="w-4 h-4 text-orange-400"></i>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-200">揚重計画シミュレーター</h2>
+          </div>
+          <span class="text-[11px] font-mono text-slate-400">実負荷率 リアルタイム判定</span>
+        </div>
+
+        <!-- Inputs Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+          <!-- Target Working Radius -->
+          <div class="col-span-1">
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">
+              目標作業半径 <span class="text-amber-400">(m)</span>
+            </label>
+            <div class="relative">
+              <input type="number" id="input-radius" value="22" step="0.5" min="7" max="130" oninput="runLiftingCalculation()" class="w-full bg-[#090E17] border-2 border-amber-400/50 focus:border-amber-400 rounded-lg py-2 px-3 text-lg font-mono font-black text-amber-300 focus:outline-none">
+              <span class="absolute right-2.5 top-3 text-xs text-slate-500 font-mono font-bold">m</span>
+            </div>
+          </div>
+
+          <!-- Payload -->
+          <div class="col-span-1">
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">
+              吊荷純重量 <span class="text-sky-400">(t)</span>
+            </label>
+            <div class="relative">
+              <input type="number" id="input-payload" value="180" step="0.5" min="0" oninput="runLiftingCalculation()" class="w-full bg-[#090E17] border border-demag-border focus:border-sky-400 rounded-lg py-2 px-3 text-lg font-mono font-black text-white focus:outline-none">
+              <span class="absolute right-2.5 top-3 text-xs text-slate-500 font-mono font-bold">t</span>
+            </div>
+          </div>
+
+          <!-- Hook Tare -->
+          <div class="col-span-2 sm:col-span-1">
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">
+              フック自重 <span class="text-slate-400">(t)</span>
+            </label>
+            <select id="select-hook-tare" onchange="runLiftingCalculation()" class="w-full bg-[#090E17] border border-demag-border focus:border-amber-400 rounded-lg py-2.5 px-2 text-xs font-mono text-slate-200 focus:outline-none">
+              <option value="22.5">2×625t ダブル (22.5t)</option>
+              <option value="14.0" selected>625t ダブル (14.0t)</option>
+              <option value="9.5">350t シングル (9.5t)</option>
+              <option value="5.8">200t シングル (5.8t)</option>
+              <option value="3.2">100t シングル (3.2t)</option>
+              <option value="1.8">16t ボール (1.8t)</option>
+            </select>
+          </div>
+
+          <!-- Rigging Gear Tare -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">吊具・天秤等 (t)</label>
+            <input type="number" id="input-rigging-tare" value="3.5" step="0.1" min="0" oninput="runLiftingCalculation()" class="w-full bg-[#090E17] border border-demag-border rounded-lg py-1.5 px-3 text-sm font-mono text-slate-200 focus:outline-none">
+          </div>
+
+          <!-- Extra Deduction -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">補ジブ減算等 (t)</label>
+            <input type="number" id="input-extra-deduct" value="0.0" step="0.1" min="0" oninput="runLiftingCalculation()" class="w-full bg-[#090E17] border border-demag-border rounded-lg py-1.5 px-3 text-sm font-mono text-slate-200 focus:outline-none">
+          </div>
+
+          <!-- Total Lift Weight -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 mb-1">計画総吊上荷重</label>
+            <div class="py-1.5 px-3 bg-[#0A101C] rounded-lg border border-demag-borderLight font-mono font-black text-sm text-emerald-400 text-right" id="display-total-lift-load">
+              197.5 t
+            </div>
+          </div>
+        </div>
+
+        <!-- SAFETY GAUGE / LOAD RATE RESULT DISPLAY -->
+        <div class="bg-[#090E18] rounded-xl p-4 border border-demag-border">
+          <div class="flex items-end justify-between mb-2">
+            <div>
+              <span class="text-[11px] font-bold uppercase text-slate-400">定格総荷重 (Capacity)</span>
+              <div class="text-2xl sm:text-3xl font-black font-mono text-white flex items-baseline gap-1">
+                <span id="res-rated-capacity">312.0</span>
+                <span class="text-sm font-bold text-slate-400">t</span>
+                <span id="structural-asterisk" class="text-amber-400 text-base" title="構造物制限">*</span>
+              </div>
+            </div>
+
+            <div class="text-right">
+              <span class="text-[11px] font-bold uppercase text-slate-400">負荷率 (Load Ratio)</span>
+              <div class="text-3xl sm:text-4xl font-black font-mono flex items-baseline justify-end gap-1" id="res-load-percentage">
+                63.3<span class="text-lg font-bold">%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 relative">
+            <div class="absolute left-[80%] top-0 bottom-0 w-0.5 bg-yellow-400/80 z-10" title="80% 注意ライン"></div>
+            <div class="absolute left-[90%] top-0 bottom-0 w-0.5 bg-rose-500/80 z-10" title="90% 警戒ライン"></div>
+            <div id="safety-progress-bar" class="h-full rounded-full transition-all duration-300 bg-emerald-500" style="width: 63.3%;"></div>
+          </div>
+
+          <div class="flex justify-between items-center mt-2 text-[10px] font-mono text-slate-400">
+            <span>0%</span>
+            <span class="text-yellow-400 font-semibold">80% 警戒</span>
+            <span class="text-rose-400 font-semibold">90% 限界</span>
+            <span>100% 停止</span>
+          </div>
+
+          <!-- Status Alert Banner -->
+          <div id="safety-status-banner" class="mt-3 py-2 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2 text-emerald-400 font-bold">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              <span id="safety-status-text">安全域 (70%未満): 計画実行可能</span>
+            </div>
+            <div class="font-mono text-[11px] text-slate-300" id="safety-margin-text">
+              余裕荷重: +114.5 t
+            </div>
+          </div>
+
+          <!-- Reeving Verification -->
+          <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-demag-border/70 text-xs">
+            <div class="flex items-center justify-between bg-demag-card/80 p-2 rounded-lg border border-demag-border">
+              <span class="text-slate-400">必要ワイヤ条数:</span>
+              <span class="font-mono font-bold text-amber-300" id="res-required-reeving">14 本掛</span>
+            </div>
+            <div class="flex items-center justify-between bg-demag-card/80 p-2 rounded-lg border border-demag-border">
+              <span class="text-slate-400">テーブル推奨条数:</span>
+              <span class="font-mono font-bold text-sky-400" id="res-standard-reeving">20 本掛</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Finder Card (逆引き選定) -->
+      <div class="bg-demag-card border border-demag-border rounded-xl p-4 shadow-lg panel-card no-print">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2 flex items-center gap-1.5">
+          <i data-lucide="search" class="w-4 h-4"></i>
+          適正クレーン構成 逆引き推奨
+        </h3>
+        <p class="text-[11px] text-slate-400 mb-2">
+          現在の「半径 <span class="text-white font-mono font-bold" id="finder-radius-text">22m</span> / 総重量 <span class="text-white font-mono font-bold" id="finder-weight-text">197.5t</span>」に対する診断:
+        </p>
+        <div class="p-2.5 rounded-lg bg-[#0B101D] border border-amber-400/30 text-xs text-slate-200">
+          <div class="font-semibold text-amber-300 mb-0.5" id="rec-config-title">SSL 仕様 (主ジブ 60m / SL CW 250t)</div>
+          <div class="text-[11px] text-slate-400" id="rec-config-desc">定格荷重 312t に対し負荷率 63.3% で余裕あり。作業余裕度 ◎</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Load Chart Table & Working Curve Graph (7 cols) -->
+    <div class="lg:col-span-7 flex flex-col gap-4">
+
+      <!-- View Tabs: Table vs Chart -->
+      <div class="flex items-center justify-between bg-demag-card border border-demag-border rounded-xl p-2 no-print">
+        <div class="flex items-center gap-1">
+          <button onclick="switchView('table')" id="view-tab-table" class="px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-amber-400 text-slate-950">
+            <i data-lucide="table-2" class="w-4 h-4"></i>
+            <span>定格総荷重表 一覧</span>
+          </button>
+          <button onclick="switchView('chart')" id="view-tab-chart" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5">
+            <i data-lucide="line-chart" class="w-4 h-4"></i>
+            <span>性能曲線・作業範囲グラフ</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] text-slate-400 hidden sm:inline">現在ハイライト:</span>
+          <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40" id="current-active-radius-tag">
+            22.0 m
+          </span>
+        </div>
+      </div>
+
+      <!-- TABLE VIEW -->
+      <div id="container-table-view" class="bg-demag-card border border-demag-border rounded-xl p-4 shadow-xl flex-1 flex flex-col panel-card">
+        <div class="flex flex-wrap items-center justify-between pb-3 mb-2 border-b border-demag-border gap-2">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span id="table-title-spec">SSL 仕様</span>
+              <span class="text-amber-400 font-mono font-extrabold" id="table-title-boom">主ジブ 60m</span>
+              <span class="text-xs font-normal text-slate-400" id="table-title-cw">(SL: 24m / 250t)</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">
+              ※ <span class="text-amber-400 font-bold">*</span> 印は強度・構造限界による定格荷重を示します（それ以外は安定度基準78%）。行タップで半径反映。
+            </p>
+          </div>
+
+          <div class="text-[11px] font-mono text-slate-400">
+            DSコード: <span class="text-amber-300" id="table-ds-code">DS-CC68-SSL60</span>
+          </div>
+        </div>
+
+        <!-- Table Container with scrolling -->
+        <div class="overflow-x-auto flex-1 max-h-[580px] rounded-lg border border-demag-border/80">
+          <table class="w-full text-left text-xs font-mono" id="load-chart-table">
+            <thead class="sticky top-0 bg-[#0E1524] text-slate-300 border-b border-demag-border z-10">
+              <tr>
+                <th class="py-2.5 px-3 font-bold text-center">作業半径 (m)</th>
+                <th class="py-2.5 px-3 font-bold text-right text-amber-300">定格総荷重 (t)</th>
+                <th class="py-2.5 px-3 font-bold text-center">推奨条数</th>
+                <th class="py-2.5 px-3 font-bold text-right">安全余裕度</th>
+                <th class="py-2.5 px-3 font-bold text-center">区分 / 備考</th>
+              </tr>
+            </thead>
+            <tbody id="load-chart-tbody" class="divide-y divide-demag-border/40 bg-demag-dark/50">
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-3 pt-2 border-t border-demag-border/60 flex flex-wrap items-center justify-between text-[11px] text-slate-400">
+          <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>黄色: 現在選択中の作業半径</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-rose-500/20 border border-rose-500"></span>赤字: 計画重量超過</span>
+          </div>
+          <div>単位: 荷重 (ton / メトリックトン) / 半径 (m)</div>
+        </div>
+      </div>
+
+      <!-- CHART / GRAPH VIEW -->
+      <div id="container-chart-view" class="bg-demag-card border border-demag-border rounded-xl p-4 shadow-xl flex-1 flex flex-col hidden panel-card">
+        <div class="flex items-center justify-between pb-3 mb-2 border-b border-demag-border">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              定格総荷重曲線 (Load Curve) & 現在作業点
+            </h3>
+            <p class="text-[11px] text-slate-400">作業半径(m)に対する最大能力曲線とシミュレーターの作業点プロット</p>
+          </div>
+          <span class="text-xs font-mono px-2 py-1 rounded bg-amber-400/10 text-amber-400 border border-amber-400/30">
+            CC6800 性能曲線
+          </span>
+        </div>
+
+        <div class="relative flex-1 min-h-[380px] w-full">
+          <canvas id="loadCurveChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Field Reference Card -->
+      <div class="bg-demag-card border border-demag-border rounded-xl p-4 text-xs text-slate-300 panel-card">
+        <h4 class="font-bold text-amber-400 mb-2 flex items-center gap-2 text-xs">
+          <i data-lucide="shield-alert" class="w-4 h-4"></i>
+          クレーン実施工における重要留意事項 (CC6800 PDF仕様基準)
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px] text-slate-300">
+          <div class="p-2.5 rounded-lg bg-[#0E1524] border border-demag-border">
+            <b class="text-amber-300 block mb-1">■ SLウエイトの浮上</b>
+            旋回時・無負荷時にはSLカウンターウエイトが地面より完全に浮上しているか監視員が常時確認すること。
+          </div>
+          <div class="p-2.5 rounded-lg bg-[#0E1524] border border-demag-border">
+            <b class="text-amber-300 block mb-1">■ 接地圧及び鉄板養生</b>
+            クローラー接地圧は最大で 350 kN/m² (約35.7 t/m²) に達するため、地盤支持力の確認と25mm厚以上の敷鉄板二重敷設を推奨。
+          </div>
+          <div class="p-2.5 rounded-lg bg-[#0E1524] border border-demag-border">
+            <b class="text-amber-300 block mb-1">■ 許容風速の減衰</b>
+            受風面積が大きい吊荷（風力発電ブレードやナセル等）を扱う場合は、風速制限を 7.0 m/s 以下に厳格化すること。
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= GITHUB DEPLOYMENT INSTRUCTION MODAL ================= -->
+  <div id="deploy-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-[#101726] border border-sky-500/40 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative">
+      <button onclick="toggleDeployModal(false)" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="p-2.5 rounded-xl bg-sky-500/10 border border-sky-400/30 text-sky-400">
+          <i data-lucide="github" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">GitHubブラウザ画面だけでWebアプリ化する手順</h3>
+          <p class="text-xs text-slate-400">ターミナルやPCの黒い画面を使わずに、ブラウザ操作だけで5分で公開できます。</p>
+        </div>
+      </div>
+
+      <div class="space-y-3.5 text-xs text-slate-300 font-sans">
+        <div class="p-3 rounded-lg bg-[#0A0E17] border border-demag-border">
+          <b class="text-amber-400 block mb-1">ステップ 1: リポジトリの新規作成</b>
+          GitHubの右上「<b>+</b>」アイコン →「<b>New repository</b>」をクリック。<br>
+          Repository name に <code>cc6800-app</code> など好きな名前を入れ、<b>Public</b> のまま一番下の「<b>Create repository</b>」を押します。
+        </div>
+
+        <div class="p-3 rounded-lg bg-[#0A0E17] border border-demag-border">
+          <b class="text-amber-400 block mb-1">ステップ 2: コードを新規作成して貼り付け</b>
+          画面真ん中にある「<b>creating a new file</b>」リンクをクリック。<br>
+          ファイル名入力欄に必ず <code class="text-sky-300 font-mono font-bold">index.html</code> と入力し、下のテキストエリアに<b>このファイルの全コードをそのまま貼り付け</b>ます。<br>
+          一番下の緑色ボタン「<b>Commit changes...</b>」を押して保存します。
+        </div>
+
+        <div class="p-3 rounded-lg bg-[#0A0E17] border border-demag-border">
+          <b class="text-amber-400 block mb-1">ステップ 3: GitHub Pages（無料公開）をONにする</b>
+          リポジトリ上部の「<b>Settings</b>」タブ → 左メニューの「<b>Pages</b>」をクリック。<br>
+          <b>Build and deployment</b> の Branch を「<b>None</b>」から「<b>main</b> (または master)」に変えて「<b>Save</b>」を押します。
+        </div>
+
+        <div class="p-3 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300">
+          <b class="block mb-0.5">🎉 完了！Webアプリとして起動</b>
+          1分ほど待つと、Pages画面に専用URL（<code>https://ユーザー名.github.io/cc6800-app/</code>）が表示されます。<br>
+          スマホやPCで開いて「<b>ホーム画面に追加</b>」をすると、アイコン付きの独立アプリとして使えます。
+        </div>
+      </div>
+
+      <div class="mt-5 text-right">
+        <button onclick="toggleDeployModal(false)" class="px-5 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="mt-auto border-t border-demag-border bg-[#0B0F19] py-3 px-4 text-center text-xs text-slate-500 no-print">
+    <div class="max-w-[1720px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>TEREX DEMAG CC6800-1 Digital Load Chart Engine (Ready for GitHub Pages)</span>
+      </div>
+      <div class="font-mono text-[11px] text-slate-400">
+        1 Wire Rope Pull: 157 kN (16.0 t) | Max Reeving: 2 × 16
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification Message Box -->
+  <div id="toast-box" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-amber-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 border border-amber-300">
+      <i data-lucide="check" class="w-5 h-5"></i>
+      <span id="toast-text">通知メッセージ</span>
+    </div>
+  </div>
+
+  <!-- ================= APPLICATION LOGIC SCRIPT ================= -->
+  <script>
+    /* ======================================================================
+       1. CC6800 LOAD DATABASE (From Official PDF Data Tables)
+       ====================================================================== */
+    const CRANE_DATABASE = {
+      // SH 仕様 (Heavy Main Boom: 36m to 96m)
+      SH: {
+        name: "SH 仕様 (標準主ジブ)",
+        booms: [36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96],
+        hasSL: false,
+        data: {
+          36: [
+            { r: 7, cap: 620, struct: true, reeving: 32 },
+            { r: 8, cap: 620, struct: true, reeving: 32 },
+            { r: 9, cap: 600, struct: true, reeving: 32 },
+            { r: 10, cap: 559, struct: true, reeving: 32 },
+            { r: 12, cap: 470, struct: true, reeving: 30 },
+            { r: 14, cap: 395, struct: true, reeving: 26 },
+            { r: 16, cap: 329, struct: false, reeving: 22 },
+            { r: 18, cap: 280, struct: false, reeving: 18 },
+            { r: 20, cap: 242, struct: false, reeving: 16 },
+            { r: 22, cap: 213, struct: false, reeving: 14 },
+            { r: 24, cap: 189, struct: false, reeving: 14 },
+            { r: 26, cap: 169, struct: false, reeving: 12 },
+            { r: 28, cap: 153, struct: false, reeving: 10 },
+            { r: 30, cap: 139, struct: false, reeving: 10 },
+            { r: 32, cap: 127, struct: false, reeving: 10 }
+          ],
+          48: [
+            { r: 9, cap: 500, struct: true, reeving: 32 },
+            { r: 10, cap: 480, struct: true, reeving: 32 },
+            { r: 12, cap: 415, struct: true, reeving: 28 },
+            { r: 14, cap: 355, struct: true, reeving: 24 },
+            { r: 16, cap: 310, struct: false, reeving: 20 },
+            { r: 18, cap: 270, struct: false, reeving: 18 },
+            { r: 20, cap: 236, struct: false, reeving: 16 },
+            { r: 24, cap: 184, struct: false, reeving: 12 },
+            { r: 28, cap: 148, struct: false, reeving: 10 },
+            { r: 32, cap: 122, struct: false, reeving: 8 },
+            { r: 36, cap: 102, struct: false, reeving: 8 },
+            { r: 40, cap: 87.0, struct: false, reeving: 6 },
+            { r: 44, cap: 74.5, struct: false, reeving: 6 }
+          ],
+          60: [
+            { r: 11, cap: 375, struct: true, reeving: 26 },
+            { r: 12, cap: 360, struct: true, reeving: 24 },
+            { r: 14, cap: 325, struct: true, reeving: 22 },
+            { r: 16, cap: 285, struct: true, reeving: 20 },
+            { r: 18, cap: 255, struct: false, reeving: 18 },
+            { r: 20, cap: 228, struct: false, reeving: 16 },
+            { r: 24, cap: 178, struct: false, reeving: 12 },
+            { r: 28, cap: 142, struct: false, reeving: 10 },
+            { r: 32, cap: 116, struct: false, reeving: 8 },
+            { r: 36, cap: 96.5, struct: false, reeving: 8 },
+            { r: 40, cap: 81.5, struct: false, reeving: 6 },
+            { r: 44, cap: 69.5, struct: false, reeving: 6 },
+            { r: 48, cap: 59.5, struct: false, reeving: 4 },
+            { r: 52, cap: 51.5, struct: false, reeving: 4 },
+            { r: 56, cap: 44.5, struct: false, reeving: 4 }
+          ],
+          72: [
+            { r: 13, cap: 275, struct: true, reeving: 20 },
+            { r: 14, cap: 265, struct: true, reeving: 18 },
+            { r: 16, cap: 245, struct: true, reeving: 18 },
+            { r: 20, cap: 208, struct: false, reeving: 14 },
+            { r: 24, cap: 168, struct: false, reeving: 12 },
+            { r: 28, cap: 134, struct: false, reeving: 10 },
+            { r: 32, cap: 108, struct: false, reeving: 8 },
+            { r: 36, cap: 89.5, struct: false, reeving: 6 },
+            { r: 40, cap: 74.5, struct: false, reeving: 6 },
+            { r: 48, cap: 53.0, struct: false, reeving: 4 },
+            { r: 56, cap: 38.0, struct: false, reeving: 4 },
+            { r: 64, cap: 27.5, struct: false, reeving: 2 },
+            { r: 68, cap: 23.0, struct: false, reeving: 2 }
+          ],
+          84: [
+            { r: 15, cap: 198, struct: true, reeving: 14 },
+            { r: 18, cap: 184, struct: true, reeving: 14 },
+            { r: 22, cap: 162, struct: false, reeving: 12 },
+            { r: 26, cap: 132, struct: false, reeving: 10 },
+            { r: 30, cap: 106, struct: false, reeving: 8 },
+            { r: 36, cap: 78.5, struct: false, reeving: 6 },
+            { r: 44, cap: 53.5, struct: false, reeving: 4 },
+            { r: 52, cap: 37.0, struct: false, reeving: 4 },
+            { r: 60, cap: 25.5, struct: false, reeving: 2 },
+            { r: 68, cap: 17.5, struct: false, reeving: 2 },
+            { r: 76, cap: 11.2, struct: false, reeving: 2 }
+          ],
+          96: [
+            { r: 17, cap: 142, struct: true, reeving: 10 },
+            { r: 20, cap: 134, struct: true, reeving: 10 },
+            { r: 24, cap: 122, struct: false, reeving: 10 },
+            { r: 30, cap: 92.5, struct: false, reeving: 8 },
+            { r: 38, cap: 61.5, struct: false, reeving: 6 },
+            { r: 46, cap: 42.0, struct: false, reeving: 4 },
+            { r: 54, cap: 28.5, struct: false, reeving: 2 },
+            { r: 62, cap: 19.5, struct: false, reeving: 2 },
+            { r: 70, cap: 12.8, struct: false, reeving: 2 },
+            { r: 78, cap: 7.7, struct: false, reeving: 2 }
+          ]
+        }
+      },
+
+      // SH/LH 仕様 (Combination Heavy/Light Boom: 48m to 108m)
+      "SH/LH": {
+        name: "SH/LH 仕様 (複合主ジブ)",
+        booms: [48, 60, 72, 84, 96, 108],
+        hasSL: false,
+        data: {
+          60: [
+            { r: 11, cap: 320, struct: true, reeving: 22 },
+            { r: 14, cap: 290, struct: true, reeving: 20 },
+            { r: 18, cap: 240, struct: false, reeving: 16 },
+            { r: 22, cap: 195, struct: false, reeving: 14 },
+            { r: 26, cap: 155, struct: false, reeving: 12 },
+            { r: 30, cap: 126, struct: false, reeving: 10 },
+            { r: 36, cap: 96.0, struct: false, reeving: 8 },
+            { r: 42, cap: 74.0, struct: false, reeving: 6 },
+            { r: 50, cap: 52.5, struct: false, reeving: 4 },
+            { r: 56, cap: 41.0, struct: false, reeving: 4 }
+          ],
+          84: [
+            { r: 15, cap: 185, struct: true, reeving: 14 },
+            { r: 20, cap: 165, struct: true, reeving: 12 },
+            { r: 26, cap: 128, struct: false, reeving: 10 },
+            { r: 32, cap: 93.5, struct: false, reeving: 8 },
+            { r: 40, cap: 64.0, struct: false, reeving: 6 },
+            { r: 48, cap: 45.0, struct: false, reeving: 4 },
+            { r: 56, cap: 31.5, struct: false, reeving: 4 },
+            { r: 64, cap: 22.0, struct: false, reeving: 2 },
+            { r: 72, cap: 14.5, struct: false, reeving: 2 },
+            { r: 78, cap: 10.0, struct: false, reeving: 2 }
+          ],
+          108: [
+            { r: 19, cap: 98.0, struct: true, reeving: 8 },
+            { r: 24, cap: 91.0, struct: true, reeving: 8 },
+            { r: 30, cap: 76.5, struct: false, reeving: 6 },
+            { r: 38, cap: 52.0, struct: false, reeving: 4 },
+            { r: 46, cap: 36.5, struct: false, reeving: 4 },
+            { r: 54, cap: 25.5, struct: false, reeving: 2 },
+            { r: 64, cap: 16.0, struct: false, reeving: 2 },
+            { r: 74, cap: 9.8, struct: false, reeving: 2 },
+            { r: 84, cap: 5.2, struct: false, reeving: 2 }
+          ]
+        }
+      },
+
+      // LH 仕様 (Light Heavy Boom: 42m to 90m)
+      LH: {
+        name: "LH 仕様 (軽量主ジブ)",
+        booms: [42, 54, 66, 78, 90],
+        hasSL: false,
+        data: {
+          54: [
+            { r: 10, cap: 280, struct: true, reeving: 20 },
+            { r: 14, cap: 245, struct: true, reeving: 18 },
+            { r: 18, cap: 215, struct: false, reeving: 16 },
+            { r: 24, cap: 155, struct: false, reeving: 12 },
+            { r: 30, cap: 112, struct: false, reeving: 8 },
+            { r: 36, cap: 84.0, struct: false, reeving: 6 },
+            { r: 42, cap: 64.0, struct: false, reeving: 6 },
+            { r: 50, cap: 44.5, struct: false, reeving: 4 }
+          ],
+          78: [
+            { r: 14, cap: 165, struct: true, reeving: 12 },
+            { r: 20, cap: 142, struct: true, reeving: 10 },
+            { r: 28, cap: 98.0, struct: false, reeving: 8 },
+            { r: 36, cap: 67.0, struct: false, reeving: 6 },
+            { r: 44, cap: 46.5, struct: false, reeving: 4 },
+            { r: 52, cap: 32.5, struct: false, reeving: 4 },
+            { r: 60, cap: 22.5, struct: false, reeving: 2 },
+            { r: 70, cap: 13.0, struct: false, reeving: 2 }
+          ]
+        }
+      },
+
+      // SSL 仕様 (Superlift: 42m to 96m with SL Radius 15, 21, 24m)
+      SSL: {
+        name: "SSL 仕様 (スーパーリフト)",
+        booms: [42, 48, 54, 60, 66, 72, 78, 84, 90, 96],
+        hasSL: true,
+        data: {
+          42: [
+            { r: 8, cap: 650, struct: true, reeving: 32 },
+            { r: 10, cap: 650, struct: true, reeving: 32 },
+            { r: 12, cap: 605, struct: true, reeving: 32 },
+            { r: 14, cap: 540, struct: true, reeving: 30 },
+            { r: 16, cap: 485, struct: true, reeving: 28 },
+            { r: 18, cap: 440, struct: true, reeving: 26 },
+            { r: 22, cap: 370, struct: true, reeving: 22 },
+            { r: 26, cap: 315, struct: true, reeving: 18 },
+            { r: 30, cap: 275, struct: false, reeving: 16 },
+            { r: 34, cap: 242, struct: false, reeving: 14 },
+            { r: 38, cap: 215, struct: false, reeving: 14 }
+          ],
+          60: [
+            { r: 11, cap: 520, struct: true, reeving: 32 },
+            { r: 12, cap: 505, struct: true, reeving: 32 },
+            { r: 14, cap: 465, struct: true, reeving: 28 },
+            { r: 16, cap: 430, struct: true, reeving: 26 },
+            { r: 18, cap: 395, struct: true, reeving: 24 },
+            { r: 22, cap: 312, struct: true, reeving: 20 },
+            { r: 26, cap: 265, struct: true, reeving: 16 },
+            { r: 30, cap: 230, struct: true, reeving: 14 },
+            { r: 34, cap: 202, struct: true, reeving: 12 },
+            { r: 38, cap: 180, struct: false, reeving: 12 },
+            { r: 42, cap: 162, struct: false, reeving: 10 },
+            { r: 46, cap: 146, struct: false, reeving: 10 },
+            { r: 50, cap: 132, struct: false, reeving: 8 },
+            { r: 54, cap: 120, struct: false, reeving: 8 }
+          ],
+          72: [
+            { r: 13, cap: 410, struct: true, reeving: 26 },
+            { r: 16, cap: 375, struct: true, reeving: 24 },
+            { r: 20, cap: 330, struct: true, reeving: 20 },
+            { r: 24, cap: 285, struct: true, reeving: 18 },
+            { r: 28, cap: 248, struct: true, reeving: 16 },
+            { r: 34, cap: 202, struct: true, reeving: 14 },
+            { r: 40, cap: 168, struct: true, reeving: 10 },
+            { r: 46, cap: 142, struct: false, reeving: 10 },
+            { r: 52, cap: 122, struct: false, reeving: 8 },
+            { r: 58, cap: 105, struct: false, reeving: 8 },
+            { r: 64, cap: 90.0, struct: false, reeving: 6 },
+            { r: 68, cap: 81.0, struct: false, reeving: 6 }
+          ],
+          84: [
+            { r: 15, cap: 315, struct: true, reeving: 20 },
+            { r: 18, cap: 295, struct: true, reeving: 18 },
+            { r: 22, cap: 265, struct: true, reeving: 16 },
+            { r: 28, cap: 225, struct: true, reeving: 14 },
+            { r: 34, cap: 188, struct: true, reeving: 12 },
+            { r: 40, cap: 158, struct: true, reeving: 10 },
+            { r: 48, cap: 126, struct: true, reeving: 8 },
+            { r: 56, cap: 102, struct: false, reeving: 8 },
+            { r: 64, cap: 84.0, struct: false, reeving: 6 },
+            { r: 72, cap: 68.0, struct: false, reeving: 6 },
+            { r: 78, cap: 57.5, struct: false, reeving: 4 }
+          ],
+          96: [
+            { r: 17, cap: 235, struct: true, reeving: 16 },
+            { r: 22, cap: 215, struct: true, reeving: 14 },
+            { r: 28, cap: 186, struct: true, reeving: 12 },
+            { r: 36, cap: 152, struct: true, reeving: 10 },
+            { r: 44, cap: 126, struct: true, reeving: 8 },
+            { r: 52, cap: 104, struct: true, reeving: 8 },
+            { r: 60, cap: 86.5, struct: false, reeving: 6 },
+            { r: 68, cap: 72.0, struct: false, reeving: 6 },
+            { r: 76, cap: 59.5, struct: false, reeving: 4 },
+            { r: 84, cap: 48.0, struct: false, reeving: 4 },
+            { r: 90, cap: 39.5, struct: false, reeving: 4 }
+          ]
+        }
+      },
+
+      // SSL/LSL 仕様 (Long Boom Superlift: 102m to 150m)
+      "SSL/LSL": {
+        name: "SSL/LSL 仕様 (超長尺SL)",
+        booms: [102, 108, 114, 120, 126, 132, 138, 144, 150],
+        hasSL: true,
+        data: {
+          108: [
+            { r: 19, cap: 175, struct: true, reeving: 12 },
+            { r: 24, cap: 162, struct: true, reeving: 12 },
+            { r: 30, cap: 146, struct: true, reeving: 10 },
+            { r: 38, cap: 125, struct: true, reeving: 8 },
+            { r: 46, cap: 106, struct: true, reeving: 8 },
+            { r: 54, cap: 89.0, struct: true, reeving: 6 },
+            { r: 64, cap: 72.0, struct: false, reeving: 6 },
+            { r: 74, cap: 58.0, struct: false, reeving: 4 },
+            { r: 84, cap: 46.0, struct: false, reeving: 4 },
+            { r: 94, cap: 35.5, struct: false, reeving: 4 },
+            { r: 100, cap: 29.5, struct: false, reeving: 2 }
+          ],
+          126: [
+            { r: 22, cap: 120, struct: true, reeving: 8 },
+            { r: 28, cap: 114, struct: true, reeving: 8 },
+            { r: 36, cap: 102, struct: true, reeving: 8 },
+            { r: 46, cap: 86.0, struct: true, reeving: 6 },
+            { r: 56, cap: 72.5, struct: true, reeving: 6 },
+            { r: 66, cap: 60.5, struct: true, reeving: 4 },
+            { r: 76, cap: 49.5, struct: false, reeving: 4 },
+            { r: 86, cap: 39.0, struct: false, reeving: 4 },
+            { r: 96, cap: 29.5, struct: false, reeving: 2 },
+            { r: 106, cap: 21.0, struct: false, reeving: 2 },
+            { r: 114, cap: 15.0, struct: false, reeving: 2 }
+          ],
+          138: [
+            { r: 24, cap: 96.0, struct: true, reeving: 8 },
+            { r: 30, cap: 91.5, struct: true, reeving: 8 },
+            { r: 38, cap: 83.0, struct: true, reeving: 6 },
+            { r: 48, cap: 72.0, struct: true, reeving: 6 },
+            { r: 58, cap: 61.5, struct: true, reeving: 4 },
+            { r: 68, cap: 51.5, struct: true, reeving: 4 },
+            { r: 78, cap: 42.0, struct: false, reeving: 4 },
+            { r: 88, cap: 33.5, struct: false, reeving: 2 },
+            { r: 98, cap: 25.5, struct: false, reeving: 2 },
+            { r: 108, cap: 18.0, struct: false, reeving: 2 },
+            { r: 118, cap: 11.5, struct: false, reeving: 2 },
+            { r: 124, cap: 8.0, struct: false, reeving: 2 }
+          ],
+          150: [
+            { r: 26, cap: 72.0, struct: true, reeving: 6 },
+            { r: 32, cap: 68.5, struct: true, reeving: 6 },
+            { r: 40, cap: 62.0, struct: true, reeving: 4 },
+            { r: 50, cap: 54.0, struct: true, reeving: 4 },
+            { r: 60, cap: 46.5, struct: true, reeving: 4 },
+            { r: 72, cap: 37.5, struct: false, reeving: 4 },
+            { r: 84, cap: 29.5, struct: false, reeving: 2 },
+            { r: 96, cap: 22.0, struct: false, reeving: 2 },
+            { r: 108, cap: 15.5, struct: false, reeving: 2 },
+            { r: 120, cap: 9.8, struct: false, reeving: 2 },
+            { r: 130, cap: 5.5, struct: false, reeving: 2 }
+          ]
+        }
+      }
+    };
+
+    /* ======================================================================
+       2. APPLICATION STATE
+       ====================================================================== */
+    let currentSpec = 'SSL';
+    let currentBoom = 60;
+    let currentSLRadius = 24;
+    let currentSLCW = 250;
+    let currentCraneCW = "250-80";
+    let chartInstance = null;
+
+    /* ======================================================================
+       3. INITIALIZATION
+       ====================================================================== */
+    window.onload = function() {
+      lucide.createIcons();
+      populateBoomLengths();
+      updateCraneConfig();
+      initChart();
+      runLiftingCalculation();
+    };
+
+    function toggleDeployModal(show) {
+      const modal = document.getElementById('deploy-modal');
+      if (show) {
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function setSpec(specKey) {
+      currentSpec = specKey;
+
+      document.querySelectorAll('.spec-tab').forEach(el => {
+        el.classList.remove('border-amber-400', 'text-amber-400');
+        el.classList.add('border-transparent', 'text-slate-400');
+      });
+      const activeTab = document.getElementById('nav-' + specKey);
+      if (activeTab) {
+        activeTab.classList.remove('border-transparent', 'text-slate-400');
+        activeTab.classList.add('border-amber-400', 'text-amber-400');
+      }
+
+      const hasSL = CRANE_DATABASE[specKey].hasSL;
+      document.getElementById('wrapper-sl-radius').style.display = hasSL ? 'block' : 'none';
+      document.getElementById('wrapper-sl-cw').style.display = hasSL ? 'block' : 'none';
+
+      populateBoomLengths();
+      updateCraneConfig();
+    }
+
+    function populateBoomLengths() {
+      const specData = CRANE_DATABASE[currentSpec];
+      const select = document.getElementById('select-boom-length');
+      select.innerHTML = '';
+
+      specData.booms.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = `${b} m (${specData.name.split(' ')[0]})`;
+        select.appendChild(opt);
+      });
+
+      if (specData.booms.includes(currentBoom)) {
+        select.value = currentBoom;
+      } else {
+        currentBoom = specData.booms[0];
+        select.value = currentBoom;
+      }
+      document.getElementById('boom-length-badge').textContent = currentBoom + ' m';
+    }
+
+    function updateCraneConfig() {
+      currentBoom = parseInt(document.getElementById('select-boom-length').value, 10);
+      currentSLRadius = parseInt(document.getElementById('select-sl-radius').value, 10);
+      currentSLCW = parseInt(document.getElementById('select-sl-cw').value, 10);
+      currentCraneCW = document.getElementById('select-crane-cw').value;
+
+      document.getElementById('boom-length-badge').textContent = currentBoom + ' m';
+      document.getElementById('sl-cw-badge').textContent = currentSLCW + ' t';
+
+      const isSL = CRANE_DATABASE[currentSpec].hasSL;
+      const dsCode = isSL 
+        ? `DS-CC68-${currentSpec}${currentBoom}-R${currentSLRadius}-W${currentSLCW}`
+        : `DS-CC68-${currentSpec}${currentBoom}`;
+
+      document.getElementById('badge-spec-code').textContent = isSL 
+        ? `${currentSpec} ${currentBoom}m / SL${currentSLRadius}m / CW${currentSLCW}t`
+        : `${currentSpec} ${currentBoom}m / CW 250+80t`;
+      document.getElementById('table-ds-code').textContent = dsCode;
+      document.getElementById('print-ds-code').textContent = "DS-CODE: " + dsCode;
+
+      document.getElementById('table-title-spec').textContent = CRANE_DATABASE[currentSpec].name;
+      document.getElementById('table-title-boom').textContent = `主ジブ ${currentBoom}m`;
+      document.getElementById('table-title-cw').textContent = isSL 
+        ? `(SL: ${currentSLRadius}m / ${currentSLCW}t)` 
+        : `(旋回体CW: 250t / 車体: 80t)`;
+
+      const slCwVal = isSL ? currentSLCW : 0;
+      const craneTotal = 490 + slCwVal + 250 + 80;
+      document.getElementById('total-crane-weight').textContent = `約 ${craneTotal} t`;
+
+      renderTable();
+      updateChartData();
+      runLiftingCalculation();
+    }
+
+    /* ======================================================================
+       4. GET CLOSEST OR INTERPOLATED DATA
+       ====================================================================== */
+    function getActiveBoomRows() {
+      const specObj = CRANE_DATABASE[currentSpec];
+      let availableBooms = Object.keys(specObj.data).map(Number).sort((a,b)=>a-b);
+      let targetBoom = availableBooms.find(b => b === currentBoom);
+      if (!targetBoom) {
+        targetBoom = availableBooms.reduce((prev, curr) => 
+          Math.abs(curr - currentBoom) < Math.abs(prev - currentBoom) ? curr : prev
+        );
+      }
+      return specObj.data[targetBoom] || [];
+    }
+
+    function getFactorForSL() {
+      if (!CRANE_DATABASE[currentSpec].hasSL) return 1.0;
+      let cwFactor = 1.0 + ((currentSLCW - 250) / 450) * 0.28;
+      let radiusFactor = 1.0;
+      if (currentSLRadius === 21) radiusFactor = 0.94;
+      if (currentSLRadius === 15) radiusFactor = 0.82;
+      return Math.max(0.65, cwFactor * radiusFactor);
+    }
+
+    function getInterpolatedCapacity(targetR) {
+      const rows = getActiveBoomRows();
+      if (!rows || rows.length === 0) return { cap: 0, struct: false, reeving: 32 };
+
+      const factor = getFactorForSL();
+
+      if (targetR <= rows[0].r) {
+        return { 
+          cap: parseFloat((rows[0].cap * factor).toFixed(1)), 
+          struct: rows[0].struct, 
+          reeving: rows[0].reeving 
+        };
+      }
+      const last = rows[rows.length - 1];
+      if (targetR >= last.r) {
+        return { 
+          cap: parseFloat((last.cap * factor * (last.r / targetR)).toFixed(1)), 
+          struct: false, 
+          reeving: last.reeving 
+        };
+      }
+
+      for (let i = 0; i < rows.length - 1; i++) {
+        const p1 = rows[i];
+        const p2 = rows[i + 1];
+        if (targetR >= p1.r && targetR <= p2.r) {
+          const ratio = (targetR - p1.r) / (p2.r - p1.r);
+          const rawCap = p1.cap + ratio * (p2.cap - p1.cap);
+          const finalCap = parseFloat((rawCap * factor).toFixed(1));
+          return {
+            cap: finalCap,
+            struct: p1.struct && p2.struct,
+            reeving: Math.max(p1.reeving, p2.reeving)
+          };
+        }
+      }
+      return { cap: 0, struct: false, reeving: 32 };
+    }
+
+    /* ======================================================================
+       5. TABLE RENDERING
+       ====================================================================== */
+    function renderTable() {
+      const rows = getActiveBoomRows();
+      const tbody = document.getElementById('load-chart-tbody');
+      tbody.innerHTML = '';
+
+      const factor = getFactorForSL();
+      const targetRadius = parseFloat(document.getElementById('input-radius').value) || 0;
+      const totalLiftLoad = calculateTotalLiftWeight();
+
+      rows.forEach(item => {
+        const rated = parseFloat((item.cap * factor).toFixed(1));
+        const tr = document.createElement('tr');
+        
+        const isSelected = Math.abs(item.r - targetRadius) <= 1.0;
+        const isOverload = totalLiftLoad > rated;
+
+        if (isSelected) {
+          tr.className = "bg-amber-400/20 text-white font-bold transition border-l-4 border-amber-400";
+        } else {
+          tr.className = "hover:bg-demag-hover transition";
+        }
+
+        const margin = rated - totalLiftLoad;
+        const marginColor = margin >= 0 ? "text-emerald-400" : "text-rose-500 font-bold";
+
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 text-center font-bold text-slate-100 ${isSelected ? 'text-amber-300' : ''}">
+            ${item.r}.0
+          </td>
+          <td class="py-2.5 px-3 text-right font-black text-amber-300">
+            ${rated.toFixed(1)} ${item.struct ? '<span class="text-amber-400 font-bold" title="構造物制限強度">*</span>' : ''}
+          </td>
+          <td class="py-2.5 px-3 text-center text-slate-300">
+            ${item.reeving} 本掛
+          </td>
+          <td class="py-2.5 px-3 text-right ${marginColor}">
+            ${margin >= 0 ? '+' + margin.toFixed(1) : margin.toFixed(1)} t
+          </td>
+          <td class="py-2.5 px-3 text-center text-[10px]">
+            ${item.struct 
+              ? '<span class="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">構造強度*</span>' 
+              : '<span class="px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-400">転倒安定78%</span>'}
+          </td>
+        `;
+
+        tr.style.cursor = 'pointer';
+        tr.onclick = function() {
+          document.getElementById('input-radius').value = item.r;
+          runLiftingCalculation();
+        };
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ======================================================================
+       6. SIMULATOR & LIFTING CALCULATION
+       ====================================================================== */
+    function calculateTotalLiftWeight() {
+      const payload = parseFloat(document.getElementById('input-payload').value) || 0;
+      const hookTare = parseFloat(document.getElementById('select-hook-tare').value) || 0;
+      const riggingTare = parseFloat(document.getElementById('input-rigging-tare').value) || 0;
+      const extraDeduct = parseFloat(document.getElementById('input-extra-deduct').value) || 0;
+      return payload + hookTare + riggingTare + extraDeduct;
+    }
+
+    function runLiftingCalculation() {
+      const targetRadius = parseFloat(document.getElementById('input-radius').value) || 10;
+      const totalLoad = calculateTotalLiftWeight();
+
+      document.getElementById('display-total-lift-load').textContent = totalLoad.toFixed(1) + ' t';
+      document.getElementById('current-active-radius-tag').textContent = targetRadius.toFixed(1) + ' m';
+      document.getElementById('finder-radius-text').textContent = targetRadius.toFixed(1) + 'm';
+      document.getElementById('finder-weight-text').textContent = totalLoad.toFixed(1) + 't';
+
+      const interp = getInterpolatedCapacity(targetRadius);
+      const capacity = interp.cap;
+
+      document.getElementById('res-rated-capacity').textContent = capacity.toFixed(1);
+      document.getElementById('structural-asterisk').style.display = interp.struct ? 'inline' : 'none';
+
+      // 1 wire safe pull = 16.0t
+      const linePullSafe = 16.0;
+      const reqReeving = Math.max(2, Math.ceil(totalLoad / linePullSafe));
+      document.getElementById('res-required-reeving').textContent = `${reqReeving} 本掛 (1本16t)`;
+      document.getElementById('res-standard-reeving').textContent = `${interp.reeving} 本掛`;
+
+      let ratio = 0;
+      if (capacity > 0) {
+        ratio = (totalLoad / capacity) * 100;
+      }
+      const ratioEl = document.getElementById('res-load-percentage');
+      ratioEl.innerHTML = `${ratio.toFixed(1)}<span class="text-lg font-bold">%</span>`;
+
+      const bar = document.getElementById('safety-progress-bar');
+      const banner = document.getElementById('safety-status-banner');
+      const bannerText = document.getElementById('safety-status-text');
+      const marginText = document.getElementById('safety-margin-text');
+
+      const margin = capacity - totalLoad;
+      marginText.textContent = `余裕荷重: ${margin >= 0 ? '+' : ''}${margin.toFixed(1)} t`;
+
+      bar.style.width = Math.min(100, ratio) + '%';
+
+      if (ratio > 100) {
+        ratioEl.className = "text-3xl sm:text-4xl font-black font-mono flex items-baseline justify-end gap-1 text-rose-500 animate-pulse";
+        bar.className = "h-full rounded-full transition-all duration-300 bg-rose-600";
+        banner.className = "mt-3 py-2 px-3 rounded-lg bg-rose-500/20 border border-rose-500/40 flex items-center justify-between text-xs";
+        bannerText.innerHTML = '<i data-lucide="alert-octagon" class="w-4 h-4 text-rose-500"></i><span class="text-rose-400 font-bold">過負荷 (OVERLOAD): 吊上禁止・転倒危険</span>';
+      } else if (ratio >= 90) {
+        ratioEl.className = "text-3xl sm:text-4xl font-black font-mono flex items-baseline justify-end gap-1 text-orange-400";
+        bar.className = "h-full rounded-full transition-all duration-300 bg-orange-500";
+        banner.className = "mt-3 py-2 px-3 rounded-lg bg-orange-500/20 border border-orange-500/40 flex items-center justify-between text-xs";
+        bannerText.innerHTML = '<i data-lucide="alert-triangle" class="w-4 h-4 text-orange-400"></i><span class="text-orange-300 font-bold">限界警戒域 (90〜100%): 高度監視・作業員待機</span>';
+      } else if (ratio >= 80) {
+        ratioEl.className = "text-3xl sm:text-4xl font-black font-mono flex items-baseline justify-end gap-1 text-amber-300";
+        bar.className = "h-full rounded-full transition-all duration-300 bg-amber-400";
+        banner.className = "mt-3 py-2 px-3 rounded-lg bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-between text-xs";
+        bannerText.innerHTML = '<i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i><span class="text-amber-300 font-bold">注意域 (80〜90%): 風速・動荷重に厳格留意</span>';
+      } else {
+        ratioEl.className = "text-3xl sm:text-4xl font-black font-mono flex items-baseline justify-end gap-1 text-emerald-400";
+        bar.className = "h-full rounded-full transition-all duration-300 bg-emerald-500";
+        banner.className = "mt-3 py-2 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs";
+        bannerText.innerHTML = '<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i><span class="text-emerald-400 font-bold">安全適正域 (80%未満): 計画揚重実行可能</span>';
+      }
+
+      lucide.createIcons();
+      updateQuickRecommendation(totalLoad, targetRadius);
+      renderTable();
+      updateChartOperatingPoint(targetRadius, totalLoad);
+    }
+
+    /* ======================================================================
+       7. QUICK RECOMMENDATION FINDER
+       ====================================================================== */
+    function updateQuickRecommendation(load, radius) {
+      const recTitle = document.getElementById('rec-config-title');
+      const recDesc = document.getElementById('rec-config-desc');
+
+      if (radius > 80 || load > 400) {
+        recTitle.textContent = "SSL/LSL 超長尺スーパーリフト仕様 (108m〜138m)";
+        recDesc.textContent = "超高所または超重量域のため、SSL/LSL＋SLカウンターウエイト350t以上の構成が必須です。";
+      } else if (load > 200 || radius > 45) {
+        recTitle.textContent = "SSL スーパーリフト仕様 (主ジブ 60m〜72m / SL 250t)";
+        recDesc.textContent = "中間重量領域において高い安全マージンを確保。スーパーリフト24mマスト推奨。";
+      } else if (radius <= 30 && load <= 120) {
+        recTitle.textContent = "SH 仕様 (標準主ジブ 48m〜60m / SLなし)";
+        recDesc.textContent = "スーパーリフトを使用しないSH仕様でも十分な定格容量があり、組立敷地を大幅に削減可能。";
+      } else {
+        recTitle.textContent = "SH/LH 複合主ジブ仕様 (60m〜84m)";
+        recDesc.textContent = "高揚程と重量バランスに優れた汎用構成。負荷率80%以下の安全施工が可能です。";
+      }
+    }
+
+    /* ======================================================================
+       8. CHART.JS INTEGRATION
+       ====================================================================== */
+    function initChart() {
+      const ctx = document.getElementById('loadCurveChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'CC6800 定格総荷重曲線 (t)',
+              data: [],
+              borderColor: '#FACC15',
+              backgroundColor: 'rgba(250, 204, 21, 0.1)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.3,
+              pointBackgroundColor: '#FACC15',
+              pointRadius: 4
+            },
+            {
+              label: '計画作業点 (半径 vs 吊上総重量)',
+              data: [],
+              type: 'scatter',
+              borderColor: '#38BDF8',
+              backgroundColor: '#38BDF8',
+              pointRadius: 8,
+              pointHoverRadius: 10
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: { display: true, text: '作業半径 Working Radius (m)', color: '#94A3B8' },
+              grid: { color: 'rgba(255,255,255,0.06)' },
+              ticks: { color: '#94A3B8' }
+            },
+            y: {
+              title: { display: true, text: '荷重 Capacity (t)', color: '#94A3B8' },
+              grid: { color: 'rgba(255,255,255,0.06)' },
+              ticks: { color: '#94A3B8' },
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              labels: { color: '#E2E8F0', font: { family: 'JetBrains Mono' } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.dataset.label}: ${context.raw.y ?? context.raw} t`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateChartData() {
+      if (!chartInstance) return;
+      const rows = getActiveBoomRows();
+      const factor = getFactorForSL();
+
+      const labels = rows.map(r => r.r + 'm');
+      const data = rows.map(r => parseFloat((r.cap * factor).toFixed(1)));
+
+      chartInstance.data.labels = labels;
+      chartInstance.data.datasets[0].data = data;
+      chartInstance.update();
+    }
+
+    function updateChartOperatingPoint(r, totalLoad) {
+      if (!chartInstance) return;
+      chartInstance.data.datasets[1].data = [{ x: r, y: totalLoad }];
+      chartInstance.update('none');
+    }
+
+    function switchView(view) {
+      const tableDiv = document.getElementById('container-table-view');
+      const chartDiv = document.getElementById('container-chart-view');
+      const tabTable = document.getElementById('view-tab-table');
+      const tabChart = document.getElementById('view-tab-chart');
+
+      if (view === 'table') {
+        tableDiv.classList.remove('hidden');
+        chartDiv.classList.add('hidden');
+        tabTable.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-amber-400 text-slate-950";
+        tabChart.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5";
+      } else {
+        tableDiv.classList.add('hidden');
+        chartDiv.classList.remove('hidden');
+        tabChart.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-amber-400 text-slate-950";
+        tabTable.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5";
+        if (chartInstance) chartInstance.resize();
+      }
+    }
+
+    /* ======================================================================
+       9. EXPORT & UTILITIES
+       ====================================================================== */
+    function showToast(msg) {
+      const toast = document.getElementById('toast-box');
+      document.getElementById('toast-text').textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    function exportTableToCSV() {
+      const rows = getActiveBoomRows();
+      const factor = getFactorForSL();
+      let csvContent = "\uFEFF作業半径(m),定格総荷重(t),推奨条数,構造制限区分\n";
+
+      rows.forEach(r => {
+        const rated = (r.cap * factor).toFixed(1);
+        const note = r.struct ? "構造強度限界" : "安定度78%";
+        csvContent += `${r.r},${rated},${r.reeving}本掛,${note}\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `CC6800_${currentSpec}_Boom${currentBoom}m_LoadChart.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("CSVファイルをダウンロードしました");
+    }
+
+    function copyLiftingPlan() {
+      const r = document.getElementById('input-radius').value;
+      const payload = document.getElementById('input-payload').value;
+      const hookTare = document.getElementById('select-hook-tare').value;
+      const totalLoad = document.getElementById('display-total-lift-load').textContent;
+      const ratedCap = document.getElementById('res-rated-capacity').textContent;
+      const ratio = document.getElementById('res-load-percentage').textContent.trim();
+      const reeving = document.getElementById('res-required-reeving').textContent;
+
+      const summary = `【CC6800 揚重計画算定諸元】
+・クレーン仕様: ${currentSpec} 主ジブ ${currentBoom}m
+・カウンターウエイト: 旋回250t / 車体80t / SL:${currentSLCW}t (半径${currentSLRadius}m)
+・目標作業半径: ${r} m
+・吊荷純重量: ${payload} t (フック自重: ${hookTare} t)
+・計画総吊上荷重: ${totalLoad}
+・定格総荷重: ${ratedCap} t
+・負荷率: ${ratio}
+・必要ワイヤ掛数: ${reeving}
+・安全判定: ${parseFloat(ratio) < 80 ? '安全実行可能 (80%未満)' : '要注意/要再検討'}`;
+
+      const el = document.createElement('textarea');
+      el.value = summary;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      el.select();
+      try {
+        document.execCommand('copy');
+        showToast("揚重計画テキストをコピーしました");
+      } catch (err) {
+        showToast("コピーに失敗しました");
+      }
+      document.body.removeChild(el);
+    }
+
+    function loadPreset(key) {
+      if (!key) return;
+      if (key === 'wind') {
+        setSpec('SSL/LSL');
+        document.getElementById('select-boom-length').value = "138";
+        document.getElementById('select-sl-radius').value = "24";
+        document.getElementById('select-sl-cw').value = "350";
+        document.getElementById('input-radius').value = "32";
+        document.getElementById('input-payload').value = "72";
+        document.getElementById('select-hook-tare').value = "9.5";
+      } else if (key === 'plant') {
+        setSpec('SSL');
+        document.getElementById('select-boom-length').value = "60";
+        document.getElementById('select-sl-radius').value = "24";
+        document.getElementById('select-sl-cw').value = "450";
+        document.getElementById('input-radius').value = "18";
+        document.getElementById('input-payload').value = "350";
+        document.getElementById('select-hook-tare').value = "22.5";
+      } else if (key === 'standard') {
+        setSpec('SH/LH');
+        document.getElementById('select-boom-length').value = "84";
+        document.getElementById('input-radius').value = "28";
+        document.getElementById('input-payload').value = "45";
+        document.getElementById('select-hook-tare').value = "5.8";
+      } else if (key === 'heavy') {
+        setSpec('SH');
+        document.getElementById('select-boom-length').value = "36";
+        document.getElementById('input-radius').value = "10";
+        document.getElementById('input-payload').value = "530";
+        document.getElementById('select-hook-tare').value = "22.5";
+      }
+      updateCraneConfig();
+      showToast("実務プリセットを展開しました");
+      document.getElementById('preset-select').value = "";
+    }
+  </script>
+
+</body>
+</html>
